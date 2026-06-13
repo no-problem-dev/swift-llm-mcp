@@ -11,6 +11,8 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "LLMMCP", targets: ["LLMMCP"]),
+        .library(name: "WebFetchKit", targets: ["WebFetchKit"]),
+        .executable(name: "web-fetch-probe", targets: ["WebFetchProbe"]),
     ],
     dependencies: [
         .package(url: "https://github.com/no-problem-dev/swift-llm-client.git", from: "3.4.1"),
@@ -20,15 +22,28 @@ let package = Package(
         .package(url: "https://github.com/no-problem-dev/swift-structured-data.git", from: "1.3.0"),
     ],
     targets: [
+        // 純粋な Web フェッチ/抽出エンジン（MCP・LLMTool 非依存）
+        .target(name: "WebFetchKit", dependencies: [
+            .product(name: "SwiftSoup", package: "SwiftSoup"),
+            .product(name: "HTTPTransport", package: "swift-http-transport"),
+        ]),
         .target(name: "LLMMCP", dependencies: [
+            "WebFetchKit",
             .product(name: "LLMClient", package: "swift-llm-client"),
             .product(name: "LLMTool", package: "swift-llm-client"),
             .product(name: "MCP", package: "swift-sdk"),
-            .product(name: "SwiftSoup", package: "SwiftSoup"),
             .product(name: "HTTPTransport", package: "swift-http-transport"),
             .product(name: "StructuredDataCore", package: "swift-structured-data"),
             .product(name: "JSONParsing", package: "swift-structured-data"),
         ]),
+        .executableTarget(name: "WebFetchProbe", dependencies: [
+            "LLMMCP",
+            "WebFetchKit",
+            .product(name: "LLMClient", package: "swift-llm-client"),
+            .product(name: "LLMTool", package: "swift-llm-client"),
+            .product(name: "HTTPTransport", package: "swift-http-transport"),
+        ]),
+        .testTarget(name: "WebFetchKitTests", dependencies: ["WebFetchKit"]),
         .testTarget(name: "LLMMCPTests", dependencies: ["LLMMCP"]),
     ]
 )

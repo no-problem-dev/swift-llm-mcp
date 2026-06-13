@@ -1,0 +1,4050 @@
+[
+  {
+    "approxTokens" : 21731,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 86891,
+    "detail" : "抽出本文 86891 文字",
+    "elapsed" : 5.9500709772109985,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 3,
+        "htmlResidue" : 6,
+        "linkDense" : 386
+      },
+      "samples" : [
+        "重複行: 「return arg1 + arg2」が3回",
+        "リンク密度 37%（386 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 257,
+        "htmlResidue" : 104,
+        "linkDense" : 1620
+      }
+    },
+    "title" : "Swift (programming language) - Wikipedia",
+    "url" : "https:\/\/en.wikipedia.org\/wiki\/Swift_(programming_language)",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 7387,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 22260,
+    "detail" : "抽出本文 22260 文字",
+    "elapsed" : 5.752427935600281,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 3,
+        "htmlResidue" : 2,
+        "linkDense" : 148
+      },
+      "samples" : [
+        "重複行: 「| --- | --- |」が5回",
+        "リンク密度 63%（148 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 149,
+        "htmlResidue" : 41,
+        "linkDense" : 6251
+      }
+    },
+    "title" : "Swift (プログラミング言語) - Wikipedia",
+    "url" : "https:\/\/ja.wikipedia.org\/wiki\/Swift_(プログラミング言語)",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3968,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 15871,
+    "detail" : "抽出本文 15871 文字",
+    "elapsed" : 4.334532022476196,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "htmlResidue" : 1,
+        "linkDense" : 63
+      },
+      "samples" : [
+        "リンク密度 40%（63 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "htmlResidue" : 8,
+        "linkDense" : 727
+      }
+    },
+    "title" : "HTTP: Hypertext Transfer Protocol | MDN",
+    "url" : "https:\/\/developer.mozilla.org\/en-US\/docs\/Web\/HTTP",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 41,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 167,
+    "detail" : "抽出本文 167 文字（閾値 200 未満）",
+    "elapsed" : 3.078621029853821,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Example Domain",
+    "url" : "https:\/\/example.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2445,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 9750,
+    "detail" : "抽出本文 9750 文字",
+    "elapsed" : 8.864352941513062,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Pride and prejudice | Project Gutenberg",
+    "url" : "https:\/\/www.gutenberg.org\/files\/1342\/1342-h\/1342-h.htm",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 10766,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 43053,
+    "detail" : "抽出本文 43053 文字",
+    "elapsed" : 6.280568957328796,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Hacker News",
+    "url" : "https:\/\/news.ycombinator.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4505,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 18016,
+    "detail" : "抽出本文 18016 文字",
+    "elapsed" : 6.290223956108093,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 243
+      },
+      "samples" : [
+        "リンク密度 92%（243 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 10257
+      }
+    },
+    "title" : "Lobsters",
+    "url" : "https:\/\/lobste.rs",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 12297,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 49076,
+    "detail" : "抽出本文 49076 文字",
+    "elapsed" : 6.227306962013245,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1
+      },
+      "samples" : [
+        "重複行: 「---」が3回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 6
+      }
+    },
+    "title" : "Microservices",
+    "url" : "https:\/\/martinfowler.com\/articles\/microservices.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 721,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 2871,
+    "detail" : "抽出本文 2871 文字",
+    "elapsed" : 3.1647520065307617,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Coding Horror",
+    "url" : "https:\/\/blog.codinghorror.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 16691,
+    "category" : "静的コンテンツ\/Wiki",
+    "contentLength" : 66721,
+    "detail" : "抽出本文 66721 文字",
+    "elapsed" : 8.274269104003906,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "How to Do Great Work",
+    "url" : "https:\/\/www.paulgraham.com\/greatwork.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 67,
+    "category" : "ニュース大手",
+    "contentLength" : 266,
+    "detail" : "抽出本文 266 文字",
+    "elapsed" : 4.647382974624634,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "The New York Times - Breaking News, US News, World News and Videos",
+    "url" : "https:\/\/www.nytimes.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2586,
+    "category" : "ニュース大手",
+    "contentLength" : 10344,
+    "detail" : "抽出本文 10344 文字",
+    "elapsed" : 3.337991952896118,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1,
+        "linkDense" : 52
+      },
+      "samples" : [
+        "重複行: 「---」が6回",
+        "リンク密度 98%（52 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 15,
+        "linkDense" : 6540
+      }
+    },
+    "title" : "BBC News - Breaking news, video and the latest top stories from the U.S. and around the world",
+    "url" : "https:\/\/www.bbc.com\/news",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 11960,
+    "category" : "ニュース大手",
+    "contentLength" : 47495,
+    "detail" : "抽出本文 47495 文字",
+    "elapsed" : 1.905900001525879,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 4,
+        "linkDense" : 153
+      },
+      "samples" : [
+        "定型文: 「sign up for」等 4箇所",
+        "リンク密度 69%（153 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 44,
+        "linkDense" : 16227
+      }
+    },
+    "title" : "Latest news, sport and opinion from the Guardian",
+    "url" : "https:\/\/www.theguardian.com\/international",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4389,
+    "category" : "ニュース大手",
+    "contentLength" : 17493,
+    "detail" : "抽出本文 17493 文字",
+    "elapsed" : 3.5555129051208496,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1,
+        "linkDense" : 75
+      },
+      "samples" : [
+        "重複行: 「---」が15回",
+        "リンク密度 73%（75 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 42,
+        "linkDense" : 6721
+      }
+    },
+    "title" : "Reuters | Breaking International News & Views",
+    "url" : "https:\/\/www.reuters.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 44,
+    "category" : "ニュース大手",
+    "contentLength" : 130,
+    "detail" : "抽出本文 130 文字（閾値 200 未満）",
+    "elapsed" : 9.659319043159485,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "ブルームバーグ日本版 - Bloomberg",
+    "url" : "https:\/\/www.bloomberg.com",
+    "wasTruncated" : true
+  },
+  {
+    "approxTokens" : 156,
+    "category" : "ニュース大手",
+    "contentLength" : 440,
+    "detail" : "抽出本文 440 文字",
+    "elapsed" : 2.4332940578460693,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "日本経済新聞 - ニュース・速報 最新情報",
+    "url" : "https:\/\/www.nikkei.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3264,
+    "category" : "ニュース大手",
+    "contentLength" : 8589,
+    "detail" : "抽出本文 8589 文字",
+    "elapsed" : 3.0086100101470947,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 97
+      },
+      "samples" : [
+        "リンク密度 91%（97 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 4770
+      }
+    },
+    "title" : "NHKニュース 速報・最新情報",
+    "url" : "https:\/\/www3.nhk.or.jp\/news\/",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 6817,
+    "category" : "ニュース大手",
+    "contentLength" : 27121,
+    "detail" : "抽出本文 27121 文字",
+    "elapsed" : 1.5652679204940796,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 21,
+        "linkDense" : 204
+      },
+      "samples" : [
+        "重複行: 「- [Lorenzo Franceschi-Bicchierai](https:」が5回",
+        "リンク密度 66%（204 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 3379,
+        "linkDense" : 8493
+      }
+    },
+    "title" : "TechCrunch | Startup and Technology News",
+    "url" : "https:\/\/techcrunch.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 91,
+    "category" : "ニュース大手",
+    "contentLength" : 365,
+    "detail" : "抽出本文 365 文字",
+    "elapsed" : 3.3962960243225098,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Ars Technica",
+    "url" : "https:\/\/arstechnica.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3543,
+    "category" : "ニュース大手",
+    "contentLength" : 14094,
+    "detail" : "抽出本文 14094 文字",
+    "elapsed" : 0.6013479232788086,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1,
+        "linkDense" : 63
+      },
+      "samples" : [
+        "重複行: 「---」が34回",
+        "リンク密度 72%（63 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 99,
+        "linkDense" : 5272
+      }
+    },
+    "title" : "The Wall Street Journal - Breaking News, Business, Financial & Economic News, World News and Video",
+    "url" : "https:\/\/www.wsj.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1747,
+    "category" : "公式ドキュメント",
+    "contentLength" : 6898,
+    "detail" : "抽出本文 6898 文字",
+    "elapsed" : 0.005264997482299805,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 43
+      },
+      "samples" : [
+        "リンク密度 62%（43 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 1855
+      }
+    },
+    "title" : "The Swift Programming Language (6.3)",
+    "url" : "https:\/\/docs.swift.org\/swift-book\/documentation\/the-swift-programming-language\/",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 671,
+    "category" : "公式ドキュメント",
+    "contentLength" : 2679,
+    "detail" : "抽出本文 2679 文字",
+    "elapsed" : 0.9655550718307495,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "The Python Tutorial",
+    "url" : "https:\/\/docs.python.org\/3\/tutorial\/index.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 50001,
+    "category" : "公式ドキュメント",
+    "contentLength" : 378870,
+    "detail" : "抽出本文 378870 文字",
+    "elapsed" : 3.2701189517974854,
+    "expected" : "readableSuccess",
+    "hasMore" : true,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 79,
+        "htmlResidue" : 2,
+        "linkDense" : 938
+      },
+      "samples" : [
+        "重複行: 「import { open, close } from 'node:fs';」が4回",
+        "リンク密度 39%（938 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 47760,
+        "htmlResidue" : 106,
+        "linkDense" : 7369
+      }
+    },
+    "title" : "File system | Node.js v26.3.0 Documentation",
+    "url" : "https:\/\/nodejs.org\/api\/fs.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 594,
+    "category" : "公式ドキュメント",
+    "contentLength" : 2377,
+    "detail" : "抽出本文 2377 文字",
+    "elapsed" : 1.5255600214004517,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Concepts",
+    "url" : "https:\/\/kubernetes.io\/docs\/concepts\/",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 770,
+    "category" : "公式ドキュメント",
+    "contentLength" : 3056,
+    "detail" : "抽出本文 3056 文字",
+    "elapsed" : 1.6184909343719482,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 17
+      },
+      "samples" : [
+        "リンク密度 37%（17 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 53
+      }
+    },
+    "title" : "Learn Rust",
+    "url" : "https:\/\/www.rust-lang.org\/learn",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4257,
+    "category" : "公式ドキュメント",
+    "contentLength" : 16966,
+    "detail" : "抽出本文 16966 文字",
+    "elapsed" : 0.9390550851821899,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 9,
+        "htmlResidue" : 45
+      },
+      "samples" : [
+        "重複行: 「```」が29回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 1062,
+        "htmlResidue" : 524
+      }
+    },
+    "title" : "Quick Start – React",
+    "url" : "https:\/\/react.dev\/learn",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 597,
+    "category" : "公式ドキュメント",
+    "contentLength" : 2383,
+    "detail" : "抽出本文 2383 文字",
+    "elapsed" : 0.7069799900054932,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2
+      },
+      "samples" : [
+        "重複行: 「```」が12回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 49
+      }
+    },
+    "title" : "Installing with Vite - Installation",
+    "url" : "https:\/\/tailwindcss.com\/docs\/installation",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 40,
+    "category" : "公式ドキュメント",
+    "contentLength" : 155,
+    "detail" : "抽出本文 155 文字（閾値 200 未満）",
+    "elapsed" : 3.5225409269332886,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "PostgreSQL 18.4 Documentation",
+    "url" : "https:\/\/www.postgresql.org\/docs\/current\/index.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1477,
+    "category" : "GitHub",
+    "contentLength" : 5910,
+    "detail" : "抽出本文 5910 文字",
+    "elapsed" : 2.450896978378296,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1
+      },
+      "samples" : [
+        "重複行: 「```」が6回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 15
+      }
+    },
+    "title" : "GitHub - swiftlang\/swift: The Swift Programming Language",
+    "url" : "https:\/\/github.com\/apple\/swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1477,
+    "category" : "GitHub",
+    "contentLength" : 5910,
+    "detail" : "抽出本文 5910 文字",
+    "elapsed" : 2.0968849658966064,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1
+      },
+      "samples" : [
+        "重複行: 「```」が6回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 15
+      }
+    },
+    "title" : "swift\/README.md at main · swiftlang\/swift",
+    "url" : "https:\/\/github.com\/apple\/swift\/blob\/main\/README.md",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1443,
+    "category" : "GitHub",
+    "contentLength" : 5774,
+    "detail" : "抽出本文 5774 文字",
+    "elapsed" : 0.6241430044174194,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2
+      },
+      "samples" : [
+        "重複行: 「```sh」が3回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 16
+      }
+    },
+    "url" : "https:\/\/raw.githubusercontent.com\/apple\/swift\/main\/README.md",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3304,
+    "category" : "GitHub",
+    "contentLength" : 13209,
+    "detail" : "抽出本文 13209 文字",
+    "elapsed" : 1.6140429973602295,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 4,
+        "htmlResidue" : 11
+      },
+      "samples" : [
+        "重複行: 「---」が12回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 164,
+        "htmlResidue" : 128
+      }
+    },
+    "title" : "SwiftSoup\/README.md at master · scinfu\/SwiftSoup",
+    "url" : "https:\/\/github.com\/scinfu\/SwiftSoup\/blob\/master\/README.md",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 621,
+    "category" : "GitHub",
+    "contentLength" : 2487,
+    "detail" : "抽出本文 2487 文字",
+    "elapsed" : 1.1400600671768188,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 2,
+        "htmlResidue" : 2,
+        "linkDense" : 11
+      },
+      "samples" : [
+        "定型文: 「sign up for」等 2箇所",
+        "リンク密度 41%（11 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 18,
+        "htmlResidue" : 54,
+        "linkDense" : 147
+      }
+    },
+    "title" : "gist:2059",
+    "url" : "https:\/\/gist.github.com\/defunkt\/2059",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "GitHub",
+    "contentLength" : 0,
+    "detail" : "HTTP 404",
+    "elapsed" : 0.27861499786376953,
+    "expected" : "notFound",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/github.com\/this-org-should-not-exist-xyz\/nope",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1696,
+    "category" : "GitHub",
+    "contentLength" : 6785,
+    "detail" : "抽出本文 6785 文字",
+    "elapsed" : 0.5324550867080688,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/api.github.com\/repos\/apple\/swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 192,
+    "category" : "GitHub",
+    "contentLength" : 768,
+    "detail" : "抽出本文 768 文字",
+    "elapsed" : 1.1950910091400146,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 6
+      },
+      "samples" : [
+        "リンク密度 49%（6 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 109
+      }
+    },
+    "title" : "linux\/MAINTAINERS at master · torvalds\/linux",
+    "url" : "https:\/\/github.com\/torvalds\/linux\/blob\/master\/MAINTAINERS",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "JSON API",
+    "contentLength" : 0,
+    "detail" : "HTTP 503",
+    "elapsed" : 2.7728859186172485,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "httpServerError",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/httpbin.org\/json",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 599,
+    "category" : "JSON API",
+    "contentLength" : 2396,
+    "detail" : "抽出本文 2396 文字",
+    "elapsed" : 0.4506499767303467,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/api.github.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 73,
+    "category" : "JSON API",
+    "contentLength" : 292,
+    "detail" : "抽出本文 292 文字",
+    "elapsed" : 0.026322007179260254,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/jsonplaceholder.typicode.com\/posts\/1",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "JSON API",
+    "contentLength" : 0,
+    "detail" : "URLError.Code(rawValue: -1003)",
+    "elapsed" : 0.3392660617828369,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "networkDNS",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/api.publicapis.org\/entries",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 39,
+    "category" : "JSON API",
+    "contentLength" : 158,
+    "detail" : "抽出本文 158 文字（閾値 200 未満）",
+    "elapsed" : 1.2566189765930176,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/catfact.ninja\/fact",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "JSON API",
+    "contentLength" : 0,
+    "detail" : "URLError.Code(rawValue: -1003)",
+    "elapsed" : 0.07816088199615479,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "networkDNS",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/www.boredapi.com\/api\/activity",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "binary content-type: application\/pdf; qs=0.001",
+    "elapsed" : 0.02901601791381836,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "contentTooLarge",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/www.w3.org\/WAI\/ER\/tests\/xhtml\/testfiles\/resources\/pdf\/dummy.pdf",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "binary content-type: application\/pdf",
+    "elapsed" : 5.201967000961304,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "contentTooLarge",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/www.orimi.com\/pdf-test.pdf",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "HTTP 403",
+    "elapsed" : 3.1872870922088623,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/upload.wikimedia.org\/wikipedia\/commons\/3\/3f\/Fronalpstock_big.jpg",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "HTTP 403",
+    "elapsed" : 1.0192079544067383,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/file-examples.com\/storage\/fe44ae1a5b66b9d7f5e2b1e\/2017\/10\/file_example_PNG_3MB.png",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "binary content-type: video\/mp4",
+    "elapsed" : 3.138930082321167,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "contentTooLarge",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/www.learningcontainer.com\/wp-content\/uploads\/2020\/05\/sample-mp4-file.mp4",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "binary content-type: application\/pdf",
+    "elapsed" : 13.108476996421814,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "contentTooLarge",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/research.nhm.org\/pdfs\/10840\/10840.pdf",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "HTTP 404",
+    "elapsed" : 5.96492600440979,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/www.africau.edu\/images\/default\/sample.pdf",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "バイナリ(PDF\/画像)",
+    "contentLength" : 0,
+    "detail" : "binary content-type: application\/pdf",
+    "elapsed" : 2.6572059392929077,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "contentTooLarge",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/filesamples.com\/samples\/document\/pdf\/sample3.pdf",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 74,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 287,
+    "detail" : "抽出本文 287 文字",
+    "elapsed" : 5.187699913978577,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Xユーザーのjack（@jack）さん",
+    "url" : "https:\/\/twitter.com\/jack",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 2.1433290243148804,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/x.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 41,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 63,
+    "detail" : "抽出本文 63 文字（閾値 200 未満）",
+    "elapsed" : 4.2698060274124146,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1
+      },
+      "samples" : [
+        "定型文: 「ログイン」等 1箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 4
+      }
+    },
+    "title" : "Instagram",
+    "url" : "https:\/\/www.instagram.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2296,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 4312,
+    "detail" : "抽出本文 4312 文字",
+    "elapsed" : 5.353844046592712,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 3,
+        "duplicateLines" : 1,
+        "trackingURL" : 1
+      },
+      "samples" : [
+        "重複行: 「コース」が3回",
+        "定型文: 「ログイン」等 3箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 12,
+        "duplicateLines" : 6,
+        "trackingURL" : 105
+      }
+    },
+    "title" : "web.dev",
+    "url" : "https:\/\/web.dev",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 13,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 54,
+    "detail" : "抽出本文 54 文字（閾値 200 未満）",
+    "elapsed" : 1.1891230344772339,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Netlify",
+    "url" : "https:\/\/app.netlify.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1301,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 5206,
+    "detail" : "抽出本文 5206 文字",
+    "elapsed" : 0.6426219940185547,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 35
+      },
+      "samples" : [
+        "リンク密度 53%（35 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 958
+      }
+    },
+    "title" : "Vercel: Build and deploy the best web experiences with the AI Cloud – Vercel",
+    "url" : "https:\/\/vercel.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3406,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 13596,
+    "detail" : "抽出本文 13596 文字",
+    "elapsed" : 2.670598030090332,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 8,
+        "linkDense" : 47
+      },
+      "samples" : [
+        "重複行: 「In Progress」が3回",
+        "リンク密度 49%（47 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 549,
+        "linkDense" : 1905
+      }
+    },
+    "title" : "Linear – The system for product development",
+    "url" : "https:\/\/linear.app",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1506,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 4967,
+    "detail" : "抽出本文 4967 文字",
+    "elapsed" : 6.885182023048401,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 7,
+        "linkDense" : 36
+      },
+      "samples" : [
+        "重複行: 「Fortune100社の62%」が3回",
+        "リンク密度 83%（36 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 274,
+        "linkDense" : 2374
+      }
+    },
+    "title" : "あなたのニーズを叶えるAIワークスペース。| Notion (ノーション)",
+    "url" : "https:\/\/www.notion.so",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2994,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 11967,
+    "detail" : "抽出本文 11967 文字",
+    "elapsed" : 0.3265509605407715,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 9,
+        "linkDense" : 87
+      },
+      "samples" : [
+        "重複行: 「play」が4回",
+        "リンク密度 83%（87 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 4568,
+        "linkDense" : 5773
+      }
+    },
+    "title" : "Discord - Group Chat That’s All Fun & Games",
+    "url" : "https:\/\/discord.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3502,
+    "category" : "SPA(JS描画)",
+    "contentLength" : 14009,
+    "detail" : "抽出本文 14009 文字",
+    "elapsed" : 2.235924005508423,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 2,
+        "duplicateLines" : 14,
+        "linkDense" : 101
+      },
+      "samples" : [
+        "重複行: 「- ![AirBnb](https:\/\/cdn.sanity.io\/images」が4回",
+        "定型文: 「sign in」等 2箇所",
+        "リンク密度 85%（101 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 14,
+        "duplicateLines" : 5813,
+        "linkDense" : 6935
+      }
+    },
+    "title" : "Figma: The Collaborative Interface Design Tool",
+    "url" : "https:\/\/www.figma.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3200,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 12770,
+    "detail" : "抽出本文 12770 文字",
+    "elapsed" : 4.29393994808197,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 77
+      },
+      "samples" : [
+        "リンク密度 51%（77 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 2089
+      }
+    },
+    "title" : "Cloudflare: Build for the agent era",
+    "url" : "https:\/\/www.cloudflare.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 0,
+    "detail" : "HTTP 403",
+    "elapsed" : 1.4925769567489624,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/www.g2.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 10848,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 43304,
+    "detail" : "抽出本文 43304 文字",
+    "elapsed" : 2.3334829807281494,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 13,
+        "linkDense" : 202
+      },
+      "samples" : [
+        "重複行: 「Get personalized private market analysis」が10回",
+        "リンク密度 49%（202 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 3738,
+        "linkDense" : 6071
+      }
+    },
+    "title" : "Crunchbase",
+    "url" : "https:\/\/www.crunchbase.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 164,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 404,
+    "detail" : "抽出本文 404 文字",
+    "elapsed" : 3.26978600025177,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "仕事探し | Indeed (インディード)",
+    "url" : "https:\/\/www.indeed.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 39,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 157,
+    "detail" : "抽出本文 157 文字（閾値 200 未満）",
+    "elapsed" : 5.25912606716156,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Glassdoor | Job Search & Career Community",
+    "url" : "https:\/\/www.glassdoor.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 38,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 154,
+    "detail" : "抽出本文 154 文字（閾値 200 未満）",
+    "elapsed" : 4.376516938209534,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Zillow: Real Estate, Apartments, Mortgages & Home Values",
+    "url" : "https:\/\/www.zillow.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 1.9430550336837769,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : " ",
+    "url" : "https:\/\/www.amazon.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2047,
+    "category" : "Bot保護(CF\/Akamai)",
+    "contentLength" : 8184,
+    "detail" : "抽出本文 8184 文字",
+    "elapsed" : 3.8263930082321167,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 69
+      },
+      "samples" : [
+        "リンク密度 95%（69 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 4874
+      }
+    },
+    "title" : "Ticketmaster: Buy Verified Tickets for Concerts, Sports, Theater and Events",
+    "url" : "https:\/\/www.ticketmaster.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 136902,
+    "category" : "日本語サイト",
+    "contentLength" : 209362,
+    "detail" : "抽出本文 209362 文字",
+    "elapsed" : 2.479362964630127,
+    "expected" : "readableSuccess",
+    "hasMore" : true,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 215
+      },
+      "samples" : [
+        "重複行: 「めがね」が3回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 3454
+      }
+    },
+    "title" : "夏目漱石 こころ",
+    "url" : "https:\/\/www.aozora.gr.jp\/cards\/000148\/files\/773_14560.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 22,
+    "category" : "日本語サイト",
+    "contentLength" : 62,
+    "detail" : "抽出本文 62 文字（閾値 200 未満）",
+    "elapsed" : 3.486734986305237,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Yahoo! JAPAN",
+    "url" : "https:\/\/www.yahoo.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 12513,
+    "category" : "日本語サイト",
+    "contentLength" : 30121,
+    "detail" : "抽出本文 30121 文字",
+    "elapsed" : 3.9340059757232666,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 3,
+        "linkDense" : 226
+      },
+      "samples" : [
+        "重複行: 「![有料会員記事](https:\/\/www.asahicom.jp\/images」が9回",
+        "リンク密度 74%（226 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 1107,
+        "linkDense" : 11721
+      }
+    },
+    "title" : "朝日新聞：朝日新聞社のニュースサイト",
+    "url" : "https:\/\/www.asahi.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 109,
+    "category" : "日本語サイト",
+    "contentLength" : 219,
+    "detail" : "抽出本文 219 文字",
+    "elapsed" : 0.9541749954223633,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 6
+      },
+      "samples" : [
+        "定型文: 「ログイン」等 6箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 24
+      }
+    },
+    "title" : "ログイン - Qiita",
+    "url" : "https:\/\/qiita.com\/trend",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 45,
+    "category" : "日本語サイト",
+    "contentLength" : 118,
+    "detail" : "抽出本文 118 文字（閾値 200 未満）",
+    "elapsed" : 0.07920098304748535,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Zenn｜エンジニアのための情報共有コミュニティ",
+    "url" : "https:\/\/zenn.dev",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 19732,
+    "category" : "日本語サイト",
+    "contentLength" : 53488,
+    "detail" : "抽出本文 53488 文字",
+    "elapsed" : 2.7752450704574585,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 495
+      },
+      "samples" : [
+        "リンク密度 88%（495 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 28144
+      }
+    },
+    "title" : "はてなブックマーク - 人気エントリー - テクノロジー",
+    "url" : "https:\/\/b.hatena.ne.jp\/hotentry\/it",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 9585,
+    "category" : "日本語サイト",
+    "contentLength" : 21563,
+    "detail" : "抽出本文 21563 文字",
+    "elapsed" : 2.5751088857650757,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 4,
+        "linkDense" : 152
+      },
+      "samples" : [
+        "重複行: 「from」が9回",
+        "リンク密度 62%（152 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 208,
+        "linkDense" : 5885
+      }
+    },
+    "title" : "IT総合情報ポータル「ITmedia」Home",
+    "url" : "https:\/\/www.itmedia.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "日本語サイト",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 3.893060088157654,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "srad.jp",
+    "url" : "https:\/\/srad.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2597,
+    "category" : "日本語サイト",
+    "contentLength" : 6650,
+    "detail" : "抽出本文 6650 文字",
+    "elapsed" : 1.0030289888381958,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2
+      },
+      "samples" : [
+        "重複行: 「---」が8回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 60
+      }
+    },
+    "title" : "青空文庫　Aozora Bunko",
+    "url" : "https:\/\/www.aozora.gr.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2334,
+    "category" : "日本語サイト",
+    "contentLength" : 7291,
+    "detail" : "抽出本文 7291 文字",
+    "elapsed" : 0.9495669603347778,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 3,
+        "linkDense" : 70
+      },
+      "samples" : [
+        "重複行: 「[suzuki.ryo](https:\/\/dev.classmethod.jp\/」が8回",
+        "リンク密度 87%（70 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 733,
+        "linkDense" : 3812
+      }
+    },
+    "title" : "クラスメソッド発「やってみた」系技術メディア | DevelopersIO",
+    "url" : "https:\/\/dev.classmethod.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "リダイレクト\/短縮URL",
+    "contentLength" : 0,
+    "detail" : "URLError.timedOut",
+    "elapsed" : 40.31472706794739,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "networkTimeout",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/httpbin.org\/redirect\/3",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 126,
+    "category" : "リダイレクト\/短縮URL",
+    "contentLength" : 504,
+    "detail" : "抽出本文 504 文字",
+    "elapsed" : 37.104238986968994,
+    "expected" : "jsonSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "htmlResidue" : 1
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+        "htmlResidue" : 405
+      }
+    },
+    "url" : "https:\/\/httpbin.org\/absolute-redirect\/2",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "リダイレクト\/短縮URL",
+    "contentLength" : 0,
+    "detail" : "HTTP 404",
+    "elapsed" : 0.9338510036468506,
+    "expected" : "notFound",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/bit.ly\/3xExample",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 41,
+    "category" : "リダイレクト\/短縮URL",
+    "contentLength" : 167,
+    "detail" : "抽出本文 167 文字（閾値 200 未満）",
+    "elapsed" : 0.7365339994430542,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Example Domain",
+    "url" : "http:\/\/example.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "リダイレクト\/短縮URL",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 1.7179930210113525,
+    "expected" : "notFound",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "https:\/\/twitter.com",
+    "url" : "https:\/\/t.co\/example",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "リダイレクト\/短縮URL",
+    "contentLength" : 0,
+    "detail" : "URLError.timedOut",
+    "elapsed" : 21.3473140001297,
+    "expected" : "notFound",
+    "hasMore" : false,
+    "layer" : "networkTimeout",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/httpbin.org\/status\/301",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 53857,
+    "category" : "巨大ページ",
+    "contentLength" : 230722,
+    "detail" : "抽出本文 230722 文字",
+    "elapsed" : 5.7530670166015625,
+    "expected" : "readableSuccess",
+    "hasMore" : true,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 15
+      },
+      "samples" : [
+        "重複行: 「|  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |」が41回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 12403
+      }
+    },
+    "title" : "List of Unicode characters - Wikipedia",
+    "url" : "https:\/\/en.wikipedia.org\/wiki\/List_of_Unicode_characters",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 13,
+    "category" : "巨大ページ",
+    "contentLength" : 52,
+    "detail" : "抽出本文 52 文字（閾値 200 未満）",
+    "elapsed" : 4.384400963783264,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "HTML Standard",
+    "url" : "https:\/\/www.w3.org\/TR\/html52\/",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 39916,
+    "category" : "巨大ページ",
+    "contentLength" : 159660,
+    "detail" : "抽出本文 159660 文字",
+    "elapsed" : 17.76776099205017,
+    "expected" : "binaryLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 1627
+      },
+      "samples" : [
+        "リンク密度 77%（1627 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 67427
+      }
+    },
+    "title" : "HTML Standard",
+    "url" : "https:\/\/html.spec.whatwg.org\/",
+    "wasTruncated" : true
+  },
+  {
+    "approxTokens" : 50052,
+    "category" : "巨大ページ",
+    "contentLength" : 450646,
+    "detail" : "抽出本文 450646 文字",
+    "elapsed" : 6.187471985816956,
+    "expected" : "readableSuccess",
+    "hasMore" : true,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 6,
+        "linkDense" : 1594
+      },
+      "samples" : [
+        "重複行: 「|  |  |」が4回",
+        "リンク密度 60%（1594 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 636,
+        "linkDense" : 50451
+      }
+    },
+    "title" : "United States - Wikipedia",
+    "url" : "https:\/\/en.wikipedia.org\/wiki\/United_States",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "HTTP 404",
+    "elapsed" : 7.666792035102844,
+    "expected" : "notFound",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/httpbin.org\/status\/404",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "HTTP 403",
+    "elapsed" : 12.904886960983276,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/httpbin.org\/status\/403",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "URLError.timedOut",
+    "elapsed" : 21.065060019493103,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "networkTimeout",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/httpbin.org\/status\/500",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "HTTP 429",
+    "elapsed" : 1.4702800512313843,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/httpbin.org\/status\/429",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "URLError.Code(rawValue: -1003)",
+    "elapsed" : 0.0019159317016601562,
+    "expected" : "networkError",
+    "hasMore" : false,
+    "layer" : "networkDNS",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/this-domain-truly-does-not-exist-abcxyz123.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "URLError.Code(rawValue: -1202)",
+    "elapsed" : 0.46910202503204346,
+    "expected" : "networkError",
+    "hasMore" : false,
+    "layer" : "networkTLS",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/expired.badssl.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "URLError.Code(rawValue: -1200)",
+    "elapsed" : 1.2568730115890503,
+    "expected" : "networkError",
+    "hasMore" : false,
+    "layer" : "networkTLS",
+    "matchedExpectation" : true,
+    "url" : "https:\/\/self-signed.badssl.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "unsupportedScheme: ftp",
+    "elapsed" : 2.002716064453125e-05,
+    "expected" : "invalidURL",
+    "hasMore" : false,
+    "layer" : "urlValidation",
+    "matchedExpectation" : true,
+    "url" : "ftp:\/\/ftp.example.com\/file.txt",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "unsupportedScheme: unknown",
+    "elapsed" : 7.987022399902344e-06,
+    "expected" : "invalidURL",
+    "hasMore" : false,
+    "layer" : "urlValidation",
+    "matchedExpectation" : true,
+    "url" : "not-a-valid-url",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "陰性対照(404\/不正)",
+    "contentLength" : 0,
+    "detail" : "HTTP 502",
+    "elapsed" : 17.325933933258057,
+    "expected" : "networkError",
+    "hasMore" : false,
+    "layer" : "httpServerError",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/httpbin.org\/delay\/30",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 7632,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 18676,
+    "detail" : "抽出本文 18676 文字",
+    "elapsed" : 1.0269979238510132,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2,
+        "linkDense" : 173
+      },
+      "samples" : [
+        "重複行: 「- [参政党は「ひょう変」したのか　再審見直し修正、急転直下の動き 6\/13 0」が3回",
+        "リンク密度 94%（173 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 414,
+        "linkDense" : 11068
+      }
+    },
+    "title" : "毎日新聞デジタル | 毎日新聞のニュースサイト",
+    "url" : "https:\/\/mainichi.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 10171,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 25349,
+    "detail" : "抽出本文 25349 文字",
+    "elapsed" : 1.0720630884170532,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 14,
+        "linkDense" : 161
+      },
+      "samples" : [
+        "重複行: 「17:36」が3回",
+        "リンク密度 57%（161 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 1808,
+        "linkDense" : 5518
+      }
+    },
+    "title" : "読売新聞 : きょうの最新ニュース・速報：発行部数No.1",
+    "url" : "https:\/\/www.yomiuri.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 172,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 351,
+    "detail" : "抽出本文 351 文字",
+    "elapsed" : 0.3680039644241333,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "産経ニュース",
+    "url" : "https:\/\/www.sankei.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3810,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 10234,
+    "detail" : "抽出本文 10234 文字",
+    "elapsed" : 0.302340030670166,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 143
+      },
+      "samples" : [
+        "リンク密度 94%（143 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 6044
+      }
+    },
+    "title" : "時事ドットコム：時事通信社が運営するニュースサイト",
+    "url" : "https:\/\/www.jiji.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 117,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 258,
+    "detail" : "抽出本文 258 文字",
+    "elapsed" : 0.23517894744873047,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "東洋経済オンライン",
+    "url" : "https:\/\/toyokeizai.net",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 55,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 111,
+    "detail" : "抽出本文 111 文字（閾値 200 未満）",
+    "elapsed" : 0.17126798629760742,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "ダイヤモンド・オンライン",
+    "url" : "https:\/\/diamond.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4138,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 9738,
+    "detail" : "抽出本文 9738 文字",
+    "elapsed" : 0.22580599784851074,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 77
+      },
+      "samples" : [
+        "リンク密度 66%（77 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 3035
+      }
+    },
+    "title" : "文春オンライン | 世の中の「ほんとう」がわかります",
+    "url" : "https:\/\/bunshun.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1204,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 3397,
+    "detail" : "抽出本文 3397 文字",
+    "elapsed" : 1.0925819873809814,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1,
+        "linkDense" : 17
+      },
+      "samples" : [
+        "重複行: 「---」が7回",
+        "リンク密度 92%（17 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 18,
+        "linkDense" : 1927
+      }
+    },
+    "title" : "NewsPicks | 経済を、もっとおもしろく。",
+    "url" : "https:\/\/newspicks.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2131,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 5810,
+    "detail" : "抽出本文 5810 文字",
+    "elapsed" : 0.17507600784301758,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1,
+        "linkDense" : 57
+      },
+      "samples" : [
+        "定型文: 「ニュースレター」等 1箇所",
+        "リンク密度 86%（57 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 7,
+        "linkDense" : 2981
+      }
+    },
+    "title" : "Impress Watch",
+    "url" : "https:\/\/www.watch.impress.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3406,
+    "category" : "日系ニュース\/メディア",
+    "contentLength" : 9146,
+    "detail" : "抽出本文 9146 文字",
+    "elapsed" : 0.1877809762954712,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 88
+      },
+      "samples" : [
+        "リンク密度 69%（88 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 3149
+      }
+    },
+    "title" : "GIGAZINE（ギガジン）",
+    "url" : "https:\/\/gigazine.net",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 0.7226450443267822,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/www.amazon.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 60,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 129,
+    "detail" : "抽出本文 129 文字（閾値 200 未満）",
+    "elapsed" : 2.1967880725860596,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "【楽天市場】Shopping is Entertainment! ： インターネット最大級の通信販売、通販オンラインショッピングコミュニティ",
+    "url" : "https:\/\/www.rakuten.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 828,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 2921,
+    "detail" : "抽出本文 2921 文字",
+    "elapsed" : 2.6626909971237183,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 2,
+        "linkDense" : 25
+      },
+      "samples" : [
+        "定型文: 「ログイン」等 2箇所",
+        "リンク密度 97%（25 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 8,
+        "linkDense" : 1812
+      }
+    },
+    "title" : "Yahoo!ショッピング - LINEアカウント連携でPayPayポイント毎日5%！ネット通販",
+    "url" : "https:\/\/shopping.yahoo.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 86,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 118,
+    "detail" : "抽出本文 118 文字（閾値 200 未満）",
+    "elapsed" : 1.1379419565200806,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "メルカリ - 日本最大のフリマサービス",
+    "url" : "https:\/\/jp.mercari.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 0,
+    "detail" : "HTTP 403",
+    "elapsed" : 0.9479550123214722,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/zozo.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 49,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 140,
+    "detail" : "抽出本文 140 文字（閾値 200 未満）",
+    "elapsed" : 0.27135396003723145,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "価格.com",
+    "url" : "https:\/\/kakaku.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 9828,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 24646,
+    "detail" : "抽出本文 24646 文字",
+    "elapsed" : 2.022726058959961,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 2,
+        "duplicateLines" : 2,
+        "linkDense" : 171
+      },
+      "samples" : [
+        "重複行: 「のお取り扱い商品です。」が4回",
+        "定型文: 「会員登録」等 2箇所",
+        "リンク密度 72%（171 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 8,
+        "duplicateLines" : 183,
+        "linkDense" : 9103
+      }
+    },
+    "title" : "ヨドバシ.com - ヨドバシカメラの公式通販サイト【全品無料配達】",
+    "url" : "https:\/\/www.yodobashi.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 20638,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 69809,
+    "detail" : "抽出本文 69809 文字",
+    "elapsed" : 2.2989450693130493,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 5,
+        "duplicateLines" : 1,
+        "linkDense" : 1240
+      },
+      "samples" : [
+        "重複行: 「[The Tabelog Award 2026 発表ページへ](https:\/\/」が3回",
+        "定型文: 「会員登録」等 5箇所",
+        "リンク密度 95%（1240 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 20,
+        "duplicateLines" : 116,
+        "linkDense" : 42085
+      }
+    },
+    "title" : "グルメ・レストランガイド",
+    "url" : "https:\/\/tabelog.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 88,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 120,
+    "detail" : "抽出本文 120 文字（閾値 200 未満）",
+    "elapsed" : 1.151968002319336,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "宿・ホテル予約 - 旅行ならじゃらんnet",
+    "url" : "https:\/\/www.jalan.net",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2075,
+    "category" : "日系EC\/サービス",
+    "contentLength" : 5054,
+    "detail" : "抽出本文 5054 文字",
+    "elapsed" : 0.9590530395507812,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 83
+      },
+      "samples" : [
+        "リンク密度 85%（83 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 2541
+      }
+    },
+    "title" : "【SUUMO】不動産売買・住宅購入・賃貸情報ならリクルートの不動産ポータルサイト",
+    "url" : "https:\/\/suumo.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1026,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 2731,
+    "detail" : "抽出本文 2731 文字",
+    "elapsed" : 0.11431002616882324,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 32
+      },
+      "samples" : [
+        "リンク密度 90%（32 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 1497
+      }
+    },
+    "title" : "首相官邸",
+    "url" : "https:\/\/www.kantei.go.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 30,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 78,
+    "detail" : "抽出本文 78 文字（閾値 200 未満）",
+    "elapsed" : 0.9127770662307739,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "総務省",
+    "url" : "https:\/\/www.soumu.go.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4289,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 7452,
+    "detail" : "抽出本文 7452 文字",
+    "elapsed" : 0.9527850151062012,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2
+      },
+      "samples" : [
+        "重複行: 「[新着情報一覧へ](https:\/\/www.nta.go.jp\/informat」が5回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 297
+      }
+    },
+    "title" : "国税庁",
+    "url" : "https:\/\/www.nta.go.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 17,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 65,
+    "detail" : "抽出本文 65 文字（閾値 200 未満）",
+    "elapsed" : 0.6988039016723633,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "気象庁 Japan Meteorological Agency",
+    "url" : "https:\/\/www.jma.go.jp\/jma\/index.html",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 272,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 722,
+    "detail" : "抽出本文 722 文字",
+    "elapsed" : 0.31535303592681885,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 8
+      },
+      "samples" : [
+        "リンク密度 91%（8 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 404
+      }
+    },
+    "title" : "ホーム｜厚生労働省",
+    "url" : "https:\/\/www.mhlw.go.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3374,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 8527,
+    "detail" : "抽出本文 8527 文字",
+    "elapsed" : 0.2414720058441162,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 48
+      },
+      "samples" : [
+        "リンク密度 50%（48 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 1286
+      }
+    },
+    "title" : "ホーム  : 日本銀行 Bank of Japan",
+    "url" : "https:\/\/www.boj.or.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2069,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 5257,
+    "detail" : "抽出本文 5257 文字",
+    "elapsed" : 0.27587997913360596,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2,
+        "linkDense" : 60
+      },
+      "samples" : [
+        "重複行: 「[RSS](https:\/\/www.jpx.co.jp\/rss\/index.ht」が5回",
+        "リンク密度 94%（60 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 184,
+        "linkDense" : 3118
+      }
+    },
+    "title" : "日本取引所グループ",
+    "url" : "https:\/\/www.jpx.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1107,
+    "category" : "日系 政府\/公共\/金融",
+    "contentLength" : 2379,
+    "detail" : "抽出本文 2379 文字",
+    "elapsed" : 2.3927559852600098,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 23
+      },
+      "samples" : [
+        "リンク密度 77%（23 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 995
+      }
+    },
+    "title" : "政府統計の総合窓口",
+    "url" : "https:\/\/www.e-stat.go.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 25,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 56,
+    "detail" : "抽出本文 56 文字（閾値 200 未満）",
+    "elapsed" : 0.24474608898162842,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Swiftとは？開発に役立つ使い方、トレンド記事やtips - Qiita",
+    "url" : "https:\/\/qiita.com\/tags\/swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 81,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 109,
+    "detail" : "抽出本文 109 文字（閾値 200 未満）",
+    "elapsed" : 0.1990870237350464,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "note ――つくる、つながる、とどける。",
+    "url" : "https:\/\/note.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 121,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 317,
+    "detail" : "抽出本文 317 文字",
+    "elapsed" : 0.216621994972229,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "connpass - エンジニアをつなぐIT勉強会支援プラットフォーム",
+    "url" : "https:\/\/connpass.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3120,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 8343,
+    "detail" : "抽出本文 8343 文字",
+    "elapsed" : 0.24116504192352295,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 13,
+        "duplicateLines" : 4,
+        "linkDense" : 88
+      },
+      "samples" : [
+        "重複行: 「[新規登録](https:\/\/auth.user.ameba.jp\/signup」が4回",
+        "定型文: 「会員登録」等 13箇所",
+        "リンク密度 87%（88 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 52,
+        "duplicateLines" : 735,
+        "linkDense" : 4378
+      }
+    },
+    "title" : "アメーバブログ（アメブロ）を無料で始めよう！",
+    "url" : "https:\/\/ameblo.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 0,
+    "detail" : "URLError.Code(rawValue: -1003)",
+    "elapsed" : 0.002521991729736328,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "networkDNS",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/oshiete.goo.ne.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 50,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 132,
+    "detail" : "抽出本文 132 文字（閾値 200 未満）",
+    "elapsed" : 0.459475040435791,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Yahoo!知恵袋 - みんなの知恵共有サービス",
+    "url" : "https:\/\/detail.chiebukuro.yahoo.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 77,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 149,
+    "detail" : "抽出本文 149 文字（閾値 200 未満）",
+    "elapsed" : 0.776980996131897,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "レシピ検索No.1／料理レシピ載せるなら Cookpad",
+    "url" : "https:\/\/cookpad.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 259,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 725,
+    "detail" : "抽出本文 725 文字",
+    "elapsed" : 0.17116689682006836,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 9
+      },
+      "samples" : [
+        "リンク密度 77%（9 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 303
+      }
+    },
+    "title" : "クラシル | 料理レシピ動画サービス",
+    "url" : "https:\/\/www.kurashiru.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3953,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 8871,
+    "detail" : "抽出本文 8871 文字",
+    "elapsed" : 1.0226880311965942,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1,
+        "linkDense" : 88
+      },
+      "samples" : [
+        "定型文: 「クッキー」等 1箇所",
+        "リンク密度 94%（88 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 4,
+        "linkDense" : 5240
+      }
+    },
+    "title" : "デリッシュキッチン | 料理レシピ動画で作り方が簡単にわかる",
+    "url" : "https:\/\/delishkitchen.tv",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 54,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 163,
+    "detail" : "抽出本文 163 文字（閾値 200 未満）",
+    "elapsed" : 0.09992098808288574,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1
+      },
+      "samples" : [
+        "定型文: 「プライバシーポリシー」等 1箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 10
+      }
+    },
+    "title" : "イラスト・マンガ・小説 作品コミュニケーションサービス [pixiv(ピクシブ)]",
+    "url" : "https:\/\/www.pixiv.net",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 59,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 91,
+    "detail" : "抽出本文 91 文字（閾値 200 未満）",
+    "elapsed" : 0.35402798652648926,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "任天堂ホームページ",
+    "url" : "https:\/\/www.nintendo.co.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3144,
+    "category" : "日系 コミュニティ\/ブログ\/レシピ",
+    "contentLength" : 7802,
+    "detail" : "抽出本文 7802 文字",
+    "elapsed" : 0.48421502113342285,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 90
+      },
+      "samples" : [
+        "リンク密度 77%（90 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 3269
+      }
+    },
+    "title" : "無料で小説を書ける、読める、伝えられる - カクヨム",
+    "url" : "https:\/\/kakuyomu.jp",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1219,
+    "category" : "RSS\/Atom\/XML フィード",
+    "contentLength" : 4813,
+    "detail" : "抽出本文 4813 文字",
+    "elapsed" : 0.5194470882415771,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 1
+      },
+      "samples" : [
+        "重複行: 「Comments」が30回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 232
+      }
+    },
+    "title" : "Hacker News",
+    "url" : "https:\/\/news.ycombinator.com\/rss",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2664,
+    "category" : "RSS\/Atom\/XML フィード",
+    "contentLength" : 10579,
+    "detail" : "抽出本文 10579 文字",
+    "elapsed" : 0.27630090713500977,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "BBC News",
+    "url" : "https:\/\/feeds.bbci.co.uk\/news\/rss.xml",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4216,
+    "category" : "RSS\/Atom\/XML フィード",
+    "contentLength" : 9320,
+    "detail" : "抽出本文 9320 文字",
+    "elapsed" : 0.03804004192352295,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "はてなブックマーク - 人気エントリー - テクノロジー",
+    "url" : "https:\/\/b.hatena.ne.jp\/hotentry\/it.rss",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2781,
+    "category" : "RSS\/Atom\/XML フィード",
+    "contentLength" : 10763,
+    "detail" : "抽出本文 10763 文字",
+    "elapsed" : 1.1550699472427368,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 3
+      },
+      "samples" : [
+        "重複行: 「Headroom — a free macOS menu bar app tha」が3回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 1412
+      }
+    },
+    "title" : "The Swift Programming Language",
+    "url" : "https:\/\/www.reddit.com\/r\/swift\/.rss",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4584,
+    "category" : "RSS\/Atom\/XML フィード",
+    "contentLength" : 8647,
+    "detail" : "抽出本文 8647 文字",
+    "elapsed" : 0.03428196907043457,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 2
+      },
+      "samples" : [
+        "定型文: 「ニュースレター」等 2箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 14
+      }
+    },
+    "title" : "Zennのトレンド",
+    "url" : "https:\/\/zenn.dev\/feed",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 469,
+    "category" : "RSS\/Atom\/XML フィード",
+    "contentLength" : 1879,
+    "detail" : "抽出本文 1879 文字",
+    "elapsed" : 0.06326699256896973,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2
+      },
+      "samples" : [
+        "重複行: 「<sitemap>」が21回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 380
+      }
+    },
+    "url" : "https:\/\/www.google.com\/sitemap.xml",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 50000,
+    "category" : "プレーンテキスト\/RFC\/設定",
+    "contentLength" : 422279,
+    "detail" : "抽出本文 422279 文字",
+    "elapsed" : 0.38267505168914795,
+    "expected" : "readableSuccess",
+    "hasMore" : true,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "blankRuns" : 162,
+        "boilerplate" : 1,
+        "duplicateLines" : 13
+      },
+      "samples" : [
+        "重複行: 「RFC 2616                        HTTP\/1.1」が80回",
+        "定型文: 「all rights reserved」等 1箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "blankRuns" : 649,
+        "boilerplate" : 19,
+        "duplicateLines" : 6829
+      }
+    },
+    "url" : "https:\/\/www.rfc-editor.org\/rfc\/rfc2616.txt",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1651,
+    "category" : "プレーンテキスト\/RFC\/設定",
+    "contentLength" : 6607,
+    "detail" : "抽出本文 6607 文字",
+    "elapsed" : 0.408547043800354,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/www.google.com\/robots.txt",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1510,
+    "category" : "プレーンテキスト\/RFC\/設定",
+    "contentLength" : 6043,
+    "detail" : "抽出本文 6043 文字",
+    "elapsed" : 0.3585948944091797,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "blankRuns" : 3
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+        "blankRuns" : 3
+      }
+    },
+    "url" : "https:\/\/raw.githubusercontent.com\/torvalds\/linux\/master\/README",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 8787,
+    "category" : "プレーンテキスト\/RFC\/設定",
+    "contentLength" : 35149,
+    "detail" : "抽出本文 35149 文字",
+    "elapsed" : 0.6567150354385376,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "url" : "https:\/\/www.gnu.org\/licenses\/gpl-3.0.txt",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 960,
+    "category" : "プレーンテキスト\/RFC\/設定",
+    "contentLength" : 3827,
+    "detail" : "抽出本文 3827 文字",
+    "elapsed" : 0.017055034637451172,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "blankRuns" : 1,
+        "duplicateLines" : 2
+      },
+      "samples" : [
+        "重複行: 「```」が3回"
+      ],
+      "wastedCharsBySignal" : {
+        "blankRuns" : 1,
+        "duplicateLines" : 22
+      }
+    },
+    "url" : "https:\/\/raw.githubusercontent.com\/apple\/swift-evolution\/main\/proposals\/0001-keywords-as-argument-labels.md",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3517,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 10093,
+    "detail" : "抽出本文 10093 文字",
+    "elapsed" : 0.7594760656356812,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2,
+        "linkDense" : 123
+      },
+      "samples" : [
+        "重複行: 「*下载客户端*」が3回",
+        "リンク密度 89%（123 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 142,
+        "linkDense" : 5491
+      }
+    },
+    "title" : "人民网_网上的人民日报",
+    "url" : "https:\/\/www.people.com.cn",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 54,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 89,
+    "detail" : "抽出本文 89 文字（閾値 200 未満）",
+    "elapsed" : 0.20467603206634521,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "네이버",
+    "url" : "https:\/\/www.naver.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 10246,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 31095,
+    "detail" : "抽出本文 31095 文字",
+    "elapsed" : 1.0488340854644775,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 181
+      },
+      "samples" : [
+        "リンク密度 99%（181 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 19882
+      }
+    },
+    "title" : "Лента.Ру",
+    "url" : "https:\/\/lenta.ru",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 14595,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 56543,
+    "detail" : "抽出本文 56543 文字",
+    "elapsed" : 1.1973850727081299,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 177
+      },
+      "samples" : [
+        "リンク密度 67%（177 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 17832
+      }
+    },
+    "title" : "Le Monde - Toute l’actualité en continu",
+    "url" : "https:\/\/www.lemonde.fr",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 20,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 81,
+    "detail" : "抽出本文 81 文字（閾値 200 未満）",
+    "elapsed" : 0.7109349966049194,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Captcha",
+    "url" : "https:\/\/www.spiegel.de",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 743,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 2467,
+    "detail" : "抽出本文 2467 文字",
+    "elapsed" : 0.38020098209381104,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 7
+      },
+      "samples" : [
+        "リンク密度 86%（7 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 1256
+      }
+    },
+    "title" : "الجزيرة نت",
+    "url" : "https:\/\/www.aljazeera.net",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2237,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 7602,
+    "detail" : "抽出本文 7602 文字",
+    "elapsed" : 0.4506160020828247,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 72
+      },
+      "samples" : [
+        "リンク密度 88%（72 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 3992
+      }
+    },
+    "title" : "Swift - 维基百科，自由的百科全书",
+    "url" : "https:\/\/zh.wikipedia.org\/wiki\/Swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 25558,
+    "category" : "多言語エンコーディング",
+    "contentLength" : 74018,
+    "detail" : "抽出本文 74018 文字",
+    "elapsed" : 1.6630200147628784,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 3,
+        "htmlResidue" : 6,
+        "linkDense" : 373
+      },
+      "samples" : [
+        "重複行: 「```」が66回",
+        "リンク密度 53%（373 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 249,
+        "htmlResidue" : 104,
+        "linkDense" : 13005
+      }
+    },
+    "title" : "스위프트 (프로그래밍 언어) - 위키백과, 우리 모두의 백과사전",
+    "url" : "https:\/\/ko.wikipedia.org\/wiki\/스위프트_(프로그래밍_언어)",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1680,
+    "category" : "学術\/フォーラム\/Q&A",
+    "contentLength" : 6719,
+    "detail" : "抽出本文 6719 文字",
+    "elapsed" : 0.1592240333557129,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 37
+      },
+      "samples" : [
+        "リンク密度 37%（37 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 165
+      }
+    },
+    "title" : "Attention Is All You Need",
+    "url" : "https:\/\/arxiv.org\/abs\/1706.03762",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "学術\/フォーラム\/Q&A",
+    "contentLength" : 0,
+    "detail" : "challenge page (title: ブラウザをチェックしています - reCAPTCHA)",
+    "elapsed" : 0.8134710788726807,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "challengeBlocked",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/pubmed.ncbi.nlm.nih.gov\/33024307\/",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 11246,
+    "category" : "学術\/フォーラム\/Q&A",
+    "contentLength" : 44843,
+    "detail" : "抽出本文 44843 文字",
+    "elapsed" : 3.4063329696655273,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1,
+        "duplicateLines" : 19,
+        "htmlResidue" : 29
+      },
+      "samples" : [
+        "重複行: 「7 gold badges」が3回",
+        "定型文: 「sign in」等 1箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 7,
+        "duplicateLines" : 1622,
+        "htmlResidue" : 400
+      }
+    },
+    "title" : "What is the difference between `let` and `var` in Swift?",
+    "url" : "https:\/\/stackoverflow.com\/questions\/24002092\/how-to-deal-with-swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 32,
+    "category" : "学術\/フォーラム\/Q&A",
+    "contentLength" : 131,
+    "detail" : "抽出本文 131 文字（閾値 200 未満）",
+    "elapsed" : 2.389435052871704,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "The Swift Programming Language • r\/swift",
+    "url" : "https:\/\/old.reddit.com\/r\/swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "学術\/フォーラム\/Q&A",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 0.601065993309021,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Reddit - Please wait for verification",
+    "url" : "https:\/\/www.reddit.com\/r\/swift",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "学術\/フォーラム\/Q&A",
+    "contentLength" : 0,
+    "detail" : "抽出本文 0 文字（閾値 200 未満）",
+    "elapsed" : 1.8692940473556519,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+
+      },
+      "samples" : [
+
+      ],
+      "wastedCharsBySignal" : {
+
+      }
+    },
+    "title" : "Y Combinator | Hacker News",
+    "url" : "https:\/\/news.ycombinator.com\/item?id=1",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 1414,
+    "category" : "DocC(Apple\/Swift JS描画)",
+    "contentLength" : 5610,
+    "detail" : "抽出本文 5610 文字",
+    "elapsed" : 1.0741639137268066,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 2,
+        "linkDense" : 26
+      },
+      "samples" : [
+        "重複行: 「```」が3回",
+        "リンク密度 41%（26 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 22,
+        "linkDense" : 350
+      }
+    },
+    "title" : "View",
+    "url" : "https:\/\/developer.apple.com\/documentation\/swiftui\/view",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 2625,
+    "category" : "DocC(Apple\/Swift JS描画)",
+    "contentLength" : 10371,
+    "detail" : "抽出本文 10371 文字",
+    "elapsed" : 1.0686109066009521,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "linkDense" : 59
+      },
+      "samples" : [
+        "リンク密度 47%（59 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "linkDense" : 1232
+      }
+    },
+    "title" : "SwiftUI",
+    "url" : "https:\/\/developer.apple.com\/documentation\/swiftui",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 34723,
+    "category" : "DocC(Apple\/Swift JS描画)",
+    "contentLength" : 138870,
+    "detail" : "抽出本文 138870 文字",
+    "elapsed" : 0.38559389114379883,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1,
+        "htmlResidue" : 1
+      },
+      "samples" : [
+        "定型文: 「all rights reserved」等 1箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 19,
+        "htmlResidue" : 209
+      }
+    },
+    "url" : "https:\/\/developer.apple.com\/tutorials\/data\/documentation\/swiftui\/view.json",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 6524,
+    "category" : "DocC(Apple\/Swift JS描画)",
+    "contentLength" : 26092,
+    "detail" : "抽出本文 26092 文字",
+    "elapsed" : 0.3687460422515869,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 6
+      },
+      "samples" : [
+        "重複行: 「\"identifiers\" : [」が4回"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 3598
+      }
+    },
+    "url" : "https:\/\/docs.swift.org\/swift-book\/data\/documentation\/the-swift-programming-language.json",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 0,
+    "category" : "ペイウォール\/ブログ基盤",
+    "contentLength" : 0,
+    "detail" : "HTTP 410",
+    "elapsed" : 0.4480719566345215,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "httpClientError",
+    "matchedExpectation" : false,
+    "url" : "https:\/\/medium.com\/@apple",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 3771,
+    "category" : "ペイウォール\/ブログ基盤",
+    "contentLength" : 15074,
+    "detail" : "抽出本文 15074 文字",
+    "elapsed" : 0.48316502571105957,
+    "expected" : "readableSuccess",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "duplicateLines" : 7,
+        "linkDense" : 176
+      },
+      "samples" : [
+        "重複行: 「2 min read」が6回",
+        "リンク密度 88%（176 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "duplicateLines" : 658,
+        "linkDense" : 7923
+      }
+    },
+    "title" : "DEV Community",
+    "url" : "https:\/\/dev.to",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 32,
+    "category" : "ペイウォール\/ブログ基盤",
+    "contentLength" : 52,
+    "detail" : "抽出本文 52 文字（閾値 200 未満）",
+    "elapsed" : 0.92084801197052,
+    "expected" : "thinContentLikely",
+    "hasMore" : false,
+    "layer" : "okThinContent",
+    "matchedExpectation" : true,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1
+      },
+      "samples" : [
+        "定型文: 「ログイン」等 1箇所"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 4
+      }
+    },
+    "title" : "Substack",
+    "url" : "https:\/\/substack.com",
+    "wasTruncated" : false
+  },
+  {
+    "approxTokens" : 4367,
+    "category" : "ペイウォール\/ブログ基盤",
+    "contentLength" : 17368,
+    "detail" : "抽出本文 17368 文字",
+    "elapsed" : 3.0402779579162598,
+    "expected" : "httpBlockedLikely",
+    "hasMore" : false,
+    "layer" : "ok",
+    "matchedExpectation" : false,
+    "noise" : {
+      "countsBySignal" : {
+        "boilerplate" : 1,
+        "duplicateLines" : 11,
+        "linkDense" : 59
+      },
+      "samples" : [
+        "重複行: 「Schools brief」が4回",
+        "定型文: 「sign up for」等 1箇所",
+        "リンク密度 58%（59 リンク）"
+      ],
+      "wastedCharsBySignal" : {
+        "boilerplate" : 11,
+        "duplicateLines" : 874,
+        "linkDense" : 3961
+      }
+    },
+    "title" : "The Economist | Go beyond breaking news",
+    "url" : "https:\/\/www.economist.com",
+    "wasTruncated" : false
+  }
+]

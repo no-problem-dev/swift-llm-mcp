@@ -36,13 +36,54 @@ public struct SwiftSoupContentExtractor: WebContentExtractor, Sendable {
         // Readabilityスコアリングで本文要素を特定
         let contentElement = try Self.findMainContent(in: doc)
 
+        // 選択済み本文要素の「中」のナビ/TOC/関連リンク集を除去する。
+        // 本文選択の後に行うことで、選択を痩せさせず本文内ノイズだけを掃除する。
+        Self.removeNavigationalLinkBlocks(in: contentElement)
+
         // Markdown変換
         let markdown = Self.convertToMarkdown(element: contentElement, baseURL: url)
 
         // 後処理
         let cleaned = Self.postProcess(markdown)
 
+        // 本文抽出が「ほぼ空」のときだけフォールバックする。短いが正常な抽出（記事）は
+        // body-text 等で汚染せずそのまま返す。
+        if cleaned.count < Self.fallbackTriggerThreshold {
+            let fallback = Self.buildFallbackContent(doc: doc, metadata: metadata, primary: cleaned)
+            return ExtractedContent(title: title, content: fallback, metadata: metadata)
+        }
+
         return ExtractedContent(title: title, content: cleaned, metadata: metadata)
+    }
+
+    /// 抽出結果がこの文字数未満なら「ほぼ空＝抽出失敗」とみなしフォールバックを試みる。
+    /// 短い正常記事を巻き込まないよう低めに設定する。
+    static let fallbackTriggerThreshold = 50
+
+    /// 本文抽出がほぼ空のときのフォールバック内容を構築する。
+    ///
+    /// 1. body の可視テキスト（リンク密度が低い=prose のときのみ）で
+    ///    table/font レイアウト等の取りこぼしを救済する（例: paulgraham）。
+    /// 2. それでも薄ければ OGP/meta description を最低限の本文として返す（SPA/paywall）。
+    /// 3. どちらも無ければ primary を返す。リンク集約ページの nav を floor として
+    ///    戻すと P1 で除去したノイズを再注入するため行わない。
+    static func buildFallbackContent(doc: Document, metadata: [String: String], primary: String) -> String {
+        // 1. body 可視テキスト（prose のときのみ採用）。table/font レイアウト救済。
+        if let body = doc.body(), let bodyText = try? body.text() {
+            let normalized = bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if normalized.count >= 200, normalized.count > primary.count {
+                let linkText = (try? body.select("a").text()) ?? ""
+                let density = normalized.isEmpty ? 1.0 : Double(linkText.count) / Double(normalized.count)
+                if density < 0.5 {
+                    return normalized
+                }
+            }
+        }
+        // 2. メタディスクリプション（SPA/paywall/nav-only ページの最低限の本文）
+        if let desc = metadata["og:description"] ?? metadata["description"], !desc.isEmpty {
+            return desc
+        }
+        return primary
     }
 
     // MARK: - (A) DOM Cleaning
@@ -74,6 +115,50 @@ public struct SwiftSoupContentExtractor: WebContentExtractor, Sendable {
             } else {
                 removeComments(from: child)
                 i += 1
+            }
+        }
+    }
+
+    // MARK: - (A2) Navigational Link Block Removal
+
+    /// 高リンク密度のナビ/TOC/関連リンク集ブロックを除去する。
+    ///
+    /// `cleanDOM` で nav/header/footer タグは除去済みのため、ここでは
+    /// `<div class=toc>` `<ul class=menu>` 等、タグだけでは判別できない
+    /// リンク集を狙う。本文（prose）と長文リンク（記事タイトル一覧）は保護する。
+    static func removeNavigationalLinkBlocks(in root: Element) {
+        let candidates = (try? root.select("ul, ol, div, section").array()) ?? []
+        for el in candidates {
+            // 既に親ごと除去済みならスキップ
+            guard el.parent() != nil else { continue }
+
+            let links = (try? el.select("a").array()) ?? []
+            guard links.count >= 3 else { continue }
+
+            let fullText = (try? el.text()) ?? ""
+            guard !fullText.isEmpty else { continue }
+            let linkText = (try? el.select("a").text()) ?? ""
+            let linkDensity = Double(linkText.count) / Double(fullText.count)
+            guard linkDensity > 0.5 else { continue }
+
+            // 純粋ナビガード: リンク以外のテキストが一定量あれば本文/データとみなし保持する。
+            // <p> に限らず <li>/<dd>/表など全テキストを対象にするため、Wikipedia の
+            // データブロックや巨大 TOC（非リンクの節番号・説明が多い）を巻き込まない。
+            let nonLinkTextLen = max(0, fullText.count - linkText.count)
+            if nonLinkTextLen > 300 { continue }
+
+            // ネガティブな class/id シグナルを持つブロックのみ除去する（保守的）。
+            // 無印（class 無し）の本文・データ・記事タイトル一覧を巻き込まないため、
+            // 密度だけでの除去はしない。明示的にナビ/TOC/関連と分かるものだけ落とす。
+            let classId = (((try? el.className()) ?? "") + " " + el.id()).lowercased()
+            let negativePatterns = [
+                "nav", "menu", "toc", "sidebar", "footer", "header", "related",
+                "breadcrumb", "pagination", "pager", "social", "share",
+                "widget", "promo", "recommend", "sitemap", "drawer", "offcanvas",
+            ]
+            let hasNegativeSignal = negativePatterns.contains { classId.contains($0) }
+            if hasNegativeSignal {
+                try? el.remove()
             }
         }
     }
@@ -261,6 +346,8 @@ public struct SwiftSoupContentExtractor: WebContentExtractor, Sendable {
             // 親が <pre> の場合はブロックコードとして処理しない（pre側で処理）
             if element.parent()?.tagName().lowercased() == "pre" {
                 let text = (try? element.text()) ?? ""
+                // 中身が空のコードブロックは空フェンスのノイズになるため出力しない
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { break }
                 let lang = (try? element.className()) ?? ""
                 let langHint = lang.replacingOccurrences(of: "language-", with: "")
                     .components(separatedBy: " ").first ?? ""
@@ -283,6 +370,8 @@ public struct SwiftSoupContentExtractor: WebContentExtractor, Sendable {
                 walkNode(codeChild, baseURL: baseURL, lines: &lines, listDepth: listDepth, listIndex: listIndex)
             } else {
                 let text = (try? element.text()) ?? ""
+                // 中身が空のコードブロックは出力しない
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { break }
                 lines.append("")
                 lines.append("```")
                 lines.append(text)
@@ -502,20 +591,46 @@ public struct SwiftSoupContentExtractor: WebContentExtractor, Sendable {
         if href.hasPrefix("data:") || href.hasPrefix("javascript:") || href.hasPrefix("#") {
             return nil
         }
+        let absolute: String?
         if href.hasPrefix("http://") || href.hasPrefix("https://") {
-            return href
+            absolute = href
+        } else {
+            absolute = URL(string: href, relativeTo: base)?.absoluteString
         }
-        return URL(string: href, relativeTo: base)?.absoluteString
+        return absolute.map(stripTrackingParams)
     }
 
-    /// 後処理: 連続空行圧縮、行末空白除去
+    /// トラッキングクエリパラメータ（utm_* / gclid / fbclid 等）を除去して URL を短縮する。
+    static func stripTrackingParams(_ urlString: String) -> String {
+        guard var components = URLComponents(string: urlString),
+              let items = components.queryItems, !items.isEmpty else {
+            return urlString
+        }
+        let trackingExact: Set<String> = ["gclid", "fbclid", "mc_eid", "igshid", "yclid", "msclkid", "_hsenc", "_hsmi"]
+        let filtered = items.filter { item in
+            let name = item.name.lowercased()
+            if name.hasPrefix("utm_") { return false }
+            return !trackingExact.contains(name)
+        }
+        components.queryItems = filtered.isEmpty ? nil : filtered
+        return components.string ?? urlString
+    }
+
+    /// 後処理: data: URI 除去、連続空行圧縮、行末空白除去、連続同一行の畳み込み
     static func postProcess(_ markdown: String) -> String {
-        let lines = markdown.components(separatedBy: "\n")
+        // base64 data URI の巨大 blob は LLM トークンの純粋な浪費なので除去する
+        let deDataURI = markdown.replacingOccurrences(
+            of: "data:[^;\\s]+;base64,[A-Za-z0-9+/=]{100,}",
+            with: "[data-uri removed]",
+            options: .regularExpression
+        )
+        let lines = deDataURI.components(separatedBy: "\n")
             .map { $0.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression) }
 
-        // 連続空行を最大1つに圧縮
+        // 連続空行を最大1つに圧縮 + 連続する同一行を1つに畳み込む
         var result: [String] = []
         var previousWasEmpty = false
+        var previousLine: String?
 
         for line in lines {
             if line.isEmpty {
@@ -523,10 +638,17 @@ public struct SwiftSoupContentExtractor: WebContentExtractor, Sendable {
                     result.append("")
                 }
                 previousWasEmpty = true
-            } else {
-                result.append(line)
-                previousWasEmpty = false
+                previousLine = nil
+                continue
             }
+            // 直前と同一の非空行は重複ノイズとして畳む。
+            // ただしテーブル行（| 始まり）は構造保持のため畳まない。
+            if let prev = previousLine, prev == line, !line.hasPrefix("|") {
+                continue
+            }
+            result.append(line)
+            previousWasEmpty = false
+            previousLine = line
         }
 
         return result.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)

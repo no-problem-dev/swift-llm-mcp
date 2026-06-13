@@ -4,3 +4,7 @@
 xcuserdata/
 .swiftpm/
 *.xcodeproj
+
+# web-fetch-probe の生成物（回帰ゲート用 baseline.json のみ追跡）
+reports/*
+!reports/baseline.json
