@@ -15,6 +15,7 @@ let package = Package(
         .executable(name: "web-fetch-probe", targets: ["WebFetchProbe"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.0"),
         .package(url: "https://github.com/no-problem-dev/swift-llm-client.git", from: "3.4.1"),
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.12.1"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.6.0"),
