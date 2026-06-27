@@ -354,7 +354,9 @@ public final class ScriptBridge: @unchecked Sendable {
             // nonisolated(unsafe) で Sendable 警告を回避（セマフォで同期するため安全）
             nonisolated(unsafe) var resultText = "[error] Request failed"
             let semaphore = DispatchSemaphore(value: 0)
-            let transport = self.transport
+            // transport を nonisolated(unsafe) でキャプチャ: ScriptBridge は @unchecked Sendable
+            // であり、HTTPTransport existential が Sendable でない場合も含めて安全に扱える
+            nonisolated(unsafe) let transport = self.transport
             let timeout = self.httpTimeout
 
             Task {
