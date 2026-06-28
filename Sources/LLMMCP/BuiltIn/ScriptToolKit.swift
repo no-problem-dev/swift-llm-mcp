@@ -359,7 +359,7 @@ public final class ScriptBridge: @unchecked Sendable {
             nonisolated(unsafe) let transport = self.transport
             let timeout = self.httpTimeout
 
-            Task {
+            Task { @Sendable in
                 defer { semaphore.signal() }
                 do {
                     let response = try await transport.send(HTTPRequest(method: "GET", url: url, timeout: timeout))
