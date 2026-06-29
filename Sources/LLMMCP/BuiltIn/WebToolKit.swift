@@ -10,8 +10,8 @@ import WebFetchKit
 
 /// Web操作ツールを提供するToolKit（`WebFetchKit.WebFetchEngine` の MCP アダプタ）
 ///
-/// URLからコンテンツを取得するツールを提供します。
-/// HTMLレスポンスは自動でMarkdown形式に変換されます。
+/// URL からコンテンツを取得するツールを提供する。
+/// HTML レスポンスは自動で Markdown 形式に変換される。
 ///
 /// ## 使用例
 ///

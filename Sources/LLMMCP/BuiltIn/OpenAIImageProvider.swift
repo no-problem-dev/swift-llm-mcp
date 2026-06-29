@@ -9,8 +9,8 @@ import LLMClient
 
 /// OpenAI gpt-image-1 を使用した画像生成プロバイダー
 ///
-/// OpenAI API キーが必要です。
-/// `POST https://api.openai.com/v1/images/generations` を直接呼び出します。
+/// OpenAI API キーが必要。
+/// `POST https://api.openai.com/v1/images/generations` を直接呼び出す。
 public final class OpenAIImageProvider: ImageGenerationProvider, @unchecked Sendable {
     // MARK: - Properties
 
@@ -20,6 +20,12 @@ public final class OpenAIImageProvider: ImageGenerationProvider, @unchecked Send
 
     // MARK: - Initialization
 
+    /// OpenAIImageProvider を作成
+    ///
+    /// - Parameters:
+    ///   - apiKey: OpenAI API キー
+    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 60）
+    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
     public init(apiKey: String, timeout: TimeInterval = 60, transport: (any HTTPTransport)? = nil) {
         self.apiKey = apiKey
         self.timeout = timeout
@@ -35,6 +41,14 @@ public final class OpenAIImageProvider: ImageGenerationProvider, @unchecked Send
 
     // MARK: - ImageGenerationProvider
 
+    /// 画像を生成
+    ///
+    /// - Parameters:
+    ///   - prompt: 画像生成プロンプト
+    ///   - size: 画像サイズ（square / landscape / portrait）
+    ///   - quality: 画像品質（standard / hd）
+    /// - Returns: 生成された画像データ
+    /// - Throws: ``ImageGenerationToolError``
     public func generateImage(prompt: String, size: ImageGenerationSize, quality: ImageGenerationQuality) async throws -> GeneratedImageData {
         let url = URL(string: "https://api.openai.com/v1/images/generations")!
 

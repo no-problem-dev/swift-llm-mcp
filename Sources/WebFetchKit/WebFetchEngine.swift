@@ -25,6 +25,7 @@ public struct FetchedDocument: Sendable {
 
 // MARK: - WebFetchHeadersResult
 
+/// `fetchHeaders` の結果。URL・ステータスコード・ヘッダーを保持する。
 public struct WebFetchHeadersResult: Sendable {
     public let url: String
     public let statusCode: Int
@@ -50,6 +51,14 @@ public struct WebFetchEngine: Sendable {
     /// HTTP トランスポート
     public let transport: any HTTPTransport
 
+    /// WebFetchEngine を作成
+    ///
+    /// - Parameters:
+    ///   - allowedDomains: 許可ドメインの配列（`nil` で全ドメインを許可）
+    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 30）
+    ///   - maxContentSize: 最大取得サイズ（バイト、デフォルト: 5 MB）
+    ///   - extractor: コンテンツ抽出器（デフォルト: `SwiftSoupContentExtractor`）
+    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
     public init(
         allowedDomains: [String]? = nil,
         timeout: TimeInterval = 30,
@@ -201,6 +210,14 @@ public struct WebFetchEngine: Sendable {
     // MARK: - fetch JSON (raw)
 
     /// JSON 取得用の生レスポンス。パースは呼び出し側に委ねる。
+    ///
+    /// - Parameters:
+    ///   - url: リクエスト URL 文字列
+    ///   - method: HTTP メソッド（デフォルト: `"GET"`）
+    ///   - headers: カスタムリクエストヘッダー
+    ///   - body: リクエストボディ（POST/PUT 用）
+    /// - Returns: `(status:, body:, url:)` — ステータスコード・レスポンスボディ・最終 URL
+    /// - Throws: ``WebFetchError``
     public func fetchRawJSON(
         url urlString: String,
         method: String = "GET",
@@ -237,6 +254,11 @@ public struct WebFetchEngine: Sendable {
 
     // MARK: - fetch headers
 
+    /// HEAD リクエストで HTTP ヘッダーのみを取得
+    ///
+    /// - Parameter url: リクエスト URL 文字列
+    /// - Returns: ステータスコードとヘッダー辞書
+    /// - Throws: ``WebFetchError``
     public func fetchHeaders(url urlString: String) async throws -> WebFetchHeadersResult {
         let url = try validateURL(urlString)
         let request = HTTPRequest(method: "HEAD", url: url, timeout: timeout)

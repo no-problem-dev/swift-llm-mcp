@@ -73,7 +73,7 @@ public actor RateLimiter {
 
     /// リクエスト許可を待機
     ///
-    /// トークンが利用可能になるまで待機し、1トークンを消費します。
+    /// トークンが利用可能になるまで待機し、1 トークンを消費する。
     public func acquire() async {
         refillTokens()
 
@@ -266,7 +266,7 @@ public actor SearchResultCache {
 
 /// レジリエンス機能を統合した検索プロバイダーラッパー
 ///
-/// キャッシュ → レート制限 → サーキットブレーカー → リトライの順で実行します。
+/// キャッシュ → レート制限 → サーキットブレーカー → リトライの順で実行する。
 public final class ResilientSearchProvider: WebSearchProvider, Sendable {
     private let provider: any WebSearchProvider
     private let rateLimiter: RateLimiter

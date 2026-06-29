@@ -5,9 +5,9 @@ import MCP
 
 /// 外部プロセスを起動してstdin/stdout経由で通信するトランスポート
 ///
-/// MCPサーバープロセスを起動し、JSON-RPC通信を行います。
-/// SDKの`StdioTransport`とは異なり、このトランスポートは
-/// 外部プロセスを起動する側として動作します。
+/// MCP サーバープロセスを起動し、JSON-RPC 通信を行う。
+/// SDK の `StdioTransport` とは異なり、このトランスポートは
+/// 外部プロセスを起動する側として動作する。
 internal actor ProcessTransport: Transport {
     // MARK: - ConnectionState
 

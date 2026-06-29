@@ -1,15 +1,15 @@
 # Getting Started with LLMMCP
 
-MCP サーバー接続と内蔵 ToolKit を `ToolSet` に組み込む方法を説明します。
+MCP サーバー接続と内蔵 ToolKit を `ToolSet` に組み込む方法を説明する。
 
-## Installation
+## インストール
 
-Swift Package Manager で追加します。
+Swift Package Manager で追加する。
 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-llm-mcp.git", from: "0.1.0"),
+    .package(url: "https://github.com/no-problem-dev/swift-llm-mcp.git", from: "0.1.1"),
 ],
 targets: [
     .target(
@@ -23,11 +23,11 @@ targets: [
 
 **対応プラットフォーム**: macOS 14+、iOS 17+
 
-## Basic Usage
+## 基本的な使い方
 
 ### 内蔵 ToolKit を使う（推奨スタート）
 
-外部プロセスや MCP サーバー不要で、すぐに使い始められます。
+外部プロセスや MCP サーバー不要で、すぐに使い始められる。
 
 ```swift
 import LLMMCP
@@ -92,7 +92,7 @@ server.excluding("delete_file")                  // 指定ツールを除外
 
 ## カスタム ToolKit を実装する
 
-``ToolKit`` プロトコルと ``BuiltInTool`` を使うと、独自ツールを `ToolSet` に追加できます。
+``ToolKit`` プロトコルと ``BuiltInTool`` を使うと、独自ツールを `ToolSet` に追加できる。
 
 ```swift
 import LLMMCP

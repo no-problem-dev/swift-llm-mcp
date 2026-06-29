@@ -7,9 +7,9 @@ import os
 
 /// ファイルシステム操作ツールを提供するToolKit
 ///
-/// 公式MCP Filesystem Serverに準拠した実装です。
-/// `allowedPaths` を指定すると、許可されたパス以下のみにアクセスを制限します。
-/// 省略した場合は iOS サンドボックスの制約のみが適用されます。
+/// 公式 MCP Filesystem Server に準拠した実装。
+/// `allowedPaths` を指定すると、許可されたパス以下のみにアクセスを制限する。
+/// 省略した場合は iOS サンドボックスの制約のみが適用される。
 ///
 /// ## 使用例
 ///
@@ -51,8 +51,8 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
 
     /// 相対パスの基準となる作業ディレクトリ
     ///
-    /// 相対パス（`/` で始まらないパス）はこのディレクトリを基準に解決されます。
-    /// デフォルトではアプリの Documents ディレクトリが使用されます。
+    /// 相対パス（`/` で始まらないパス）はこのディレクトリを基準に解決される。
+    /// デフォルトではアプリの Documents ディレクトリが使用される。
     private let workingDirectory: String
 
     /// FileManager
@@ -67,8 +67,8 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - allowedPaths: アクセスを許可するパスの配列（nil で全パス許可）
-    ///     チルダ（~）はホームディレクトリに展開されます。
-    ///     iOS ではサンドボックスが OS レベルで制限するため、nil（全許可）で問題ありません。
+    ///     チルダ（~）はホームディレクトリに展開される。
+    ///     iOS ではサンドボックスが OS レベルで制限するため、nil（全許可）で問題ない。
     ///   - workingDirectory: 相対パスの基準ディレクトリ（nil でアプリの Documents ディレクトリ）
     public init(allowedPaths: [String]? = nil, workingDirectory: String? = nil) {
         self.allowedPaths = allowedPaths?.map { path in
@@ -81,7 +81,7 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
     /// ワークスペースから初期化
     ///
     /// ワークスペースの `rootDirectory` を `allowedPaths` に、
-    /// `workingDirectory` をツールの作業ディレクトリに設定します。
+    /// `workingDirectory` をツールの作業ディレクトリに設定する。
     ///
     /// - Parameter workspace: ワークスペース
     public convenience init(workspace: Workspace) {

@@ -9,7 +9,7 @@ import LLMTool
 
 /// Web検索プロバイダーのプロトコル
 ///
-/// 異なる検索エンジンバックエンドを差し替え可能にするための抽象化です。
+/// 異なる検索エンジンバックエンドを差し替え可能にするための抽象化。
 ///
 /// ## 使用例
 ///
@@ -51,8 +51,8 @@ public struct WebSearchResult: Codable, Sendable {
 
 /// APIキー未設定時のフォールバックプロバイダー
 ///
-/// 検索実行時に設定方法を案内するエラーを返します。
-/// ビルドは通るが、実行時にユーザーに設定を促します。
+/// 検索実行時に設定方法を案内するエラーを返す。
+/// ビルドは通るが、実行時にユーザーに設定を促す。
 public struct UnconfiguredSearchProvider: WebSearchProvider {
     public init() {}
 
@@ -65,8 +65,8 @@ public struct UnconfiguredSearchProvider: WebSearchProvider {
 
 /// Web検索ツールを提供するToolKit
 ///
-/// Web検索を実行し、タイトル・URL・スニペットの一覧を返します。
-/// Brave Search API または Serper API をバックエンドとして使用します。
+/// Web 検索を実行し、タイトル・URL・スニペットの一覧を返す。
+/// Brave Search API または Serper API をバックエンドとして使用する。
 ///
 /// ## 使用例
 ///

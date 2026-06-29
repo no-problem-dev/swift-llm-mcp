@@ -7,13 +7,13 @@ import LLMTool
 
 /// MCPサーバーから取得したツール
 ///
-/// Toolプロトコルに準拠しており、通常のツールと同様に使用できます。
-/// MCPサーバーへの実行リクエストの転送を担当します。
+/// Tool プロトコルに準拠しており、通常のツールと同様に使用できる。
+/// MCP サーバーへの実行リクエストの転送を担当する。
 ///
 /// ## 内部実装詳細
 ///
-/// このクラスはMCPサーバーから取得したツール定義を保持し、
-/// `execute(with:)` 呼び出し時にMCPサーバーへリクエストを転送します。
+/// このクラスは MCP サーバーから取得したツール定義を保持し、
+/// `execute(with:)` 呼び出し時に MCP サーバーへリクエストを転送する。
 public final class MCPTool: Tool, @unchecked Sendable {
     // MARK: - Properties
 
@@ -60,9 +60,9 @@ public final class MCPTool: Tool, @unchecked Sendable {
 
     /// ツールを実行
     ///
-    /// MCPサーバーへリクエストを転送し、結果を返します。
+    /// MCP サーバーへリクエストを転送し、結果を返す。
     ///
-    /// - Parameter argumentsData: 引数のJSONデータ
+    /// - Parameter argumentsData: 引数の JSON データ
     /// - Returns: ツール実行結果
     /// - Throws: 実行エラー
     public func execute(with argumentsData: Data) async throws -> ToolResult {
@@ -75,7 +75,7 @@ public final class MCPTool: Tool, @unchecked Sendable {
 extension MCPTool {
     /// JSON定義からMCPToolを作成
     ///
-    /// MCPサーバーから返されたツール定義JSONからMCPToolを生成します。
+    /// MCP サーバーから返されたツール定義 JSON から MCPTool を生成する。
     ///
     /// - Parameters:
     ///   - json: ツール定義JSON

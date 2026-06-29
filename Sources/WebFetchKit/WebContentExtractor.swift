@@ -4,15 +4,15 @@ import Foundation
 
 /// HTMLコンテンツ抽出プロバイダーのプロトコル
 ///
-/// 異なる抽出戦略を差し替え可能にするための抽象化です。
+/// 異なる抽出戦略を差し替え可能にするための抽象化。
 /// `WebSearchProvider` パターンに倣い、デフォルト実装として
-/// `SwiftSoupContentExtractor` を提供します。
+/// `SwiftSoupContentExtractor` を提供する。
 ///
 /// ## 使用例
 ///
 /// ```swift
 /// let extractor = SwiftSoupContentExtractor()
-/// let content = try await extractor.extract(html: htmlString, url: pageURL)
+/// let content = try extractor.extract(html: htmlString, url: pageURL)
 /// print(content.content) // Markdown形式のテキスト
 /// ```
 public protocol WebContentExtractor: Sendable {

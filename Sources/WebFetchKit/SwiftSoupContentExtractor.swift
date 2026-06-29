@@ -5,7 +5,7 @@ import SwiftSoup
 
 /// SwiftSoupを使用したWebコンテンツ抽出のデフォルト実装
 ///
-/// 3つの主要な責務を持ちます：
+/// 3つの主要な責務を持つ：
 /// 1. **DOMクリーニング** — 不要な要素（script, style, nav等）を除去
 /// 2. **Readabilityスコアリング** — 本文コンテンツの自動検出
 /// 3. **Markdown変換** — DOMを再帰的にMarkdownへ変換

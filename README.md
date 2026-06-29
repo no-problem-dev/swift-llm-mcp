@@ -1,105 +1,100 @@
----
-title: swift-llm-mcp README
-created: 2026-06-27
-tags: [swift, mcp, llm, readme]
-status: active
----
+English | [日本語](./README.ja.md)
 
 # swift-llm-mcp
 
-> MCP サーバー接続・内蔵 ToolKit・ToolKit/BuiltInTool アダプタを提供する Swift パッケージ。swift-llm-client の `ToolSet` に外部ケイパビリティを解決して組み込む。
+> A Swift package providing MCP server connections, built-in ToolKits, and `ToolKit`/`BuiltInTool` adapters. Resolves external capabilities into `ToolSet` from [swift-llm-client](https://github.com/no-problem-dev/swift-llm-client).
 
-swift-llm-agent から分離されたツール解決レイヤー。エージェントランタイムが全体に依存するのではなく、このパッケージに絞った依存を持てるように設計されている。
+Extracted from swift-llm-agent as a standalone tool-resolution layer, so dependents can take a narrower dependency on just this package rather than the full agent runtime.
 
 ---
 
-## 提供モジュール
+## Modules
 
-| モジュール | 用途 |
+| Module | Purpose |
 |---|---|
-| `LLMMCP` | MCP サーバー接続・内蔵 ToolKit・ToolSet 拡張 |
-| `WebFetchKit` | MCP/LLMTool 非依存の純粋な Web フェッチエンジン |
-| `web-fetch-probe` | WebFetchKit の品質検証用 CLI ツール（実行ファイル） |
+| `LLMMCP` | MCP server connections, built-in ToolKits, ToolSet extensions |
+| `WebFetchKit` | Pure web fetch engine with no MCP/LLMTool dependencies |
+| `web-fetch-probe` | CLI quality-verification tool for WebFetchKit (executable) |
 
 ---
 
-## インストール（Swift Package Manager）
+## Installation (Swift Package Manager)
 
-`Package.swift` の `dependencies` に追加:
+Add to `dependencies` in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-llm-mcp.git", from: "0.1.0"),
+    .package(url: "https://github.com/no-problem-dev/swift-llm-mcp.git", from: "0.1.1"),
 ],
 ```
 
-ターゲットに追加:
+Add to your target:
 
 ```swift
 .target(
     name: "MyTarget",
     dependencies: [
         .product(name: "LLMMCP", package: "swift-llm-mcp"),
-        // Web フェッチエンジン単体が必要な場合
+        // If you need the web fetch engine standalone:
         .product(name: "WebFetchKit", package: "swift-llm-mcp"),
     ]
 ),
 ```
 
-**対応プラットフォーム**: macOS 14+、iOS 17+
+**Platforms**: macOS 14+, iOS 17+
 
 ---
 
-## LLMMCP モジュール
+## LLMMCP Module
 
-### MCPServer — 外部 MCP サーバーへの接続
+### MCPServer — External MCP Server Connections
 
-#### stdio（macOS のみ）
+#### stdio (macOS only)
 
 ```swift
 import LLMMCP
 import LLMTool
 
-// npx で MCP サーバーを起動し接続
+// Launch an MCP server via npx and connect
 let tools = ToolSet {
     MCPServer(
         command: "npx",
         arguments: ["-y", "@anthropic/mcp-server-filesystem", "/path/to/dir"]
     )
-    .readOnly  // 読み取り専用ツールのみ
+    .readOnly  // Use read-only tools only
 
     MCPServer(
         command: "npx",
         arguments: ["-y", "@anthropic/mcp-server-brave-search"],
         environment: ["BRAVE_API_KEY": "your-key"]
     )
-    .excluding("dangerous_tool")  // 特定ツールを除外
+    .excluding("dangerous_tool")  // Exclude specific tools
 }
 
-// MCPServer のプレースホルダーを実際のツールに解決してから使う
+// Resolve MCP placeholders to actual tools before use
 let resolved = try await tools.resolvingMCPServers()
 ```
 
-#### HTTP（Streamable HTTP）
+#### HTTP (Streamable HTTP)
 
 ```swift
-// 認証なし
+// No auth
 MCPServer(url: URL(string: "http://localhost:8080/mcp")!)
 
-// Bearer トークン認証（OAuth 2.1）
+// Bearer token auth (OAuth 2.1)
 MCPServer(
     url: URL(string: "https://mcp.example.com/mcp")!,
     authorization: .bearer("your-access-token")
 )
 
-// カスタムヘッダー認証
+// Custom header auth
 MCPServer(
     url: URL(string: "https://mcp.example.com/mcp")!,
     authorization: .header("X-API-Key", "your-key")
 )
 ```
 
-#### プリセット — Notion MCP
+#### Preset — Notion MCP
 
 ```swift
 let tools = ToolSet {
@@ -108,21 +103,21 @@ let tools = ToolSet {
 let resolved = try await tools.resolvingMCPServers()
 ```
 
-#### ツール選択 API
+#### Tool Selection API
 
 ```swift
-server.readOnly               // 読み取り専用ツールのみ
-server.safe                   // 破壊的操作を除外
-server.including("tool1", "tool2")   // 指定ツールのみ
-server.excluding("delete_file")      // 指定ツールを除外
-server.all                    // すべてのツール（デフォルト）
+server.readOnly               // Read-only tools only
+server.safe                   // Exclude destructive operations
+server.including("tool1", "tool2")   // Specific tools only
+server.excluding("delete_file")      // Exclude specific tools
+server.all                    // All tools (default)
 ```
 
 ---
 
-### 内蔵 ToolKit — 外部 MCP サーバー不要のツール群
+### Built-in ToolKits — No External MCP Server Required
 
-`ToolKit` プロトコルに準拠した型を `ToolSet {}` ブロック内に直接記述できる。
+Types conforming to `ToolKit` can be placed directly inside a `ToolSet {}` block.
 
 ```swift
 let tools = ToolSet {
@@ -133,39 +128,39 @@ let tools = ToolSet {
 }
 ```
 
-#### WebToolKit — Web フェッチ
+#### WebToolKit — Web Fetch
 
-HTML を自動で Markdown に変換して返す。
+Automatically converts HTML responses to Markdown.
 
 ```swift
-// ドメイン制限あり
+// Restrict to specific domains
 let tools = ToolSet {
     WebToolKit(allowedDomains: ["api.example.com", "docs.example.com"])
 }
 ```
 
-提供ツール:
+Provided tools:
 
-| ツール名 | 説明 |
+| Tool | Description |
 |---|---|
-| `fetch` | URL を取得。HTML は自動 Markdown 変換。ページネーション対応（`start_index`/`max_length`） |
-| `fetch_json` | URL から JSON を取得してパース |
-| `fetch_headers` | HEAD リクエストで HTTP ヘッダーのみ取得 |
+| `fetch` | Fetch a URL. HTML is automatically converted to Markdown. Supports pagination via `start_index`/`max_length` |
+| `fetch_json` | Fetch and parse JSON from a URL |
+| `fetch_headers` | Fetch HTTP headers only via HEAD request |
 
-#### WebSearchToolKit — Web 検索
+#### WebSearchToolKit — Web Search
 
 ```swift
 // Brave Search API
 let tools = ToolSet {
-    WebSearchToolKit.brave(apiKey: "BRAVE_KEY", searchLang: "ja", country: "JP")
+    WebSearchToolKit.brave(apiKey: "BRAVE_KEY", searchLang: "en", country: "US")
 }
 
-// Serper API（日本語最適化）
+// Serper API (optimized for Japanese)
 let tools = ToolSet {
     WebSearchToolKit.serper(apiKey: "SERPER_KEY", gl: "jp", hl: "ja")
 }
 
-// フォールバックチェーン
+// Fallback chain
 let tools = ToolSet {
     WebSearchToolKit.withFallback(
         primary: BraveSearchProvider(apiKey: "BRAVE_KEY"),
@@ -174,23 +169,23 @@ let tools = ToolSet {
 }
 ```
 
-提供ツール:
+Provided tools:
 
-| ツール名 | 説明 |
+| Tool | Description |
 |---|---|
-| `web_search` | クエリで Web 検索。タイトル・URL・スニペット一覧を返す（最大 10 件） |
+| `web_search` | Search the web and return titles, URLs, and snippets (up to 10 results) |
 
-レジリエンス機能（デフォルト有効）: レート制限（1 req/s）、サーキットブレーカー、LRU+TTL キャッシュ（5 分）、リトライ。
+Resilience features (enabled by default): rate limiting (1 req/s), circuit breaker, LRU+TTL cache (5 min), retry.
 
-#### FileSystemToolKit — ファイル操作
+#### FileSystemToolKit — File Operations
 
 ```swift
-// iOS: サンドボックス内は全て許可（デフォルト）
+// iOS: all sandbox paths allowed (default)
 let tools = ToolSet {
     FileSystemToolKit()
 }
 
-// macOS: 特定ディレクトリのみ許可
+// macOS: restrict to specific directories
 let tools = ToolSet {
     FileSystemToolKit(
         allowedPaths: ["/Users/user/projects"],
@@ -198,29 +193,29 @@ let tools = ToolSet {
     )
 }
 
-// Workspace から初期化
+// Initialize from a Workspace
 let tools = ToolSet {
     FileSystemToolKit(workspace: workspace)
 }
 ```
 
-提供ツール:
+Provided tools:
 
-| ツール名 | 説明 |
+| Tool | Description |
 |---|---|
-| `read_file` | ファイル内容を読み取り |
-| `read_multiple_files` | 複数ファイルを一括読み取り |
-| `write_file` | ファイルを作成/上書き（事前 read 必須） |
-| `edit_file` | 文字列置換によるファイル編集（事前 read 必須） |
-| `create_directory` | ディレクトリ作成（親ディレクトリも自動作成） |
-| `list_directory` | ディレクトリ内容一覧 |
-| `directory_tree` | ディレクトリツリー表示（最大深さ指定可） |
-| `move_file` | ファイル/ディレクトリの移動・名前変更 |
-| `search_files` | グロブパターンでファイル検索 |
-| `grep_files` | 正規表現でファイル内容を全文検索 |
-| `get_file_info` | ファイルのサイズ・パーミッション・タイムスタンプ取得 |
+| `read_file` | Read file contents |
+| `read_multiple_files` | Read multiple files at once |
+| `write_file` | Create or overwrite a file (prior read required) |
+| `edit_file` | Edit a file by string replacement (prior read required) |
+| `create_directory` | Create a directory (parent directories created automatically) |
+| `list_directory` | List directory contents |
+| `directory_tree` | Recursive directory tree view (configurable max depth) |
+| `move_file` | Move or rename a file/directory |
+| `search_files` | Search for files by glob pattern |
+| `grep_files` | Full-text search with a regular expression |
+| `get_file_info` | Get file size, permissions, and timestamps |
 
-#### ImageGenerationToolKit — 画像生成
+#### ImageGenerationToolKit — Image Generation
 
 ```swift
 let tools = ToolSet {
@@ -235,15 +230,15 @@ let tools = ToolSet {
 }
 ```
 
-提供ツール:
+Provided tools:
 
-| ツール名 | 説明 |
+| Tool | Description |
 |---|---|
-| `generate_image` | テキストプロンプトから画像を生成。サイズ（square/landscape/portrait）・品質（standard/hd）指定可 |
+| `generate_image` | Generate an image from a text prompt. Size (square/landscape/portrait) and quality (standard/hd) are configurable |
 
-#### ScriptToolKit — JavaScript 実行（JavaScriptCore）
+#### ScriptToolKit — JavaScript Execution (JavaScriptCore)
 
-LLM が生成した JavaScript をサンドボックス内で実行する。`ios` オブジェクト経由でファイル操作と HTTP リクエストが可能。
+Executes LLM-generated JavaScript in a sandboxed environment. File operations and HTTP requests are available via the `ios` object.
 
 ```swift
 let tools = ToolSet {
@@ -254,13 +249,13 @@ let tools = ToolSet {
 }
 ```
 
-提供ツール:
+Provided tools:
 
-| ツール名 | 説明 |
+| Tool | Description |
 |---|---|
-| `run_script` | JavaScript を実行。`ios.readFile(path)`/`ios.writeFile(path, content)`/`ios.fetch(url)` などの iOS ブリッジを提供 |
+| `run_script` | Execute JavaScript. Provides an iOS bridge via `ios.readFile(path)`, `ios.writeFile(path, content)`, `ios.fetch(url)`, etc. |
 
-#### UtilityToolKit — 汎用ユーティリティ
+#### UtilityToolKit — General Utilities
 
 ```swift
 let tools = ToolSet {
@@ -268,18 +263,18 @@ let tools = ToolSet {
 }
 ```
 
-提供ツール:
+Provided tools:
 
-| ツール名 | 説明 |
+| Tool | Description |
 |---|---|
-| `get_current_time` | 現在時刻を指定フォーマット・タイムゾーンで取得 |
-| `calculate` | 基本的な数学計算（add/subtract/multiply/divide/power/sqrt/abs/round/floor/ceil） |
-| `generate_uuid` | UUID 生成（standard/compact/uppercase、最大 100 件） |
-| `sleep` | 指定秒数待機（0.001 〜 60 秒） |
+| `get_current_time` | Get the current time in a specified format and timezone |
+| `calculate` | Basic math operations (add/subtract/multiply/divide/power/sqrt/abs/round/floor/ceil) |
+| `generate_uuid` | Generate UUIDs (standard/compact/uppercase, up to 100 at once) |
+| `sleep` | Wait for a specified duration (0.001–60 seconds) |
 
 ---
 
-### ToolKit プロトコル — カスタム ToolKit の実装
+### ToolKit Protocol — Implementing Custom ToolKits
 
 ```swift
 import LLMMCP
@@ -306,7 +301,7 @@ public struct MyToolKit: ToolKit {
     }
 }
 
-// ToolSet に追加
+// Add to ToolSet
 let tools = ToolSet {
     MyToolKit()
 }
@@ -314,59 +309,55 @@ let tools = ToolSet {
 
 ---
 
-## WebFetchKit モジュール
+## WebFetchKit Module
 
-MCP や LLMTool に依存しない純粋な Web フェッチエンジン。`WebToolKit` の下層として使われるほか、エージェント外のコードからも直接利用できる。
+A pure web fetch engine with no MCP or LLMTool dependencies. Used as the underlying layer by `WebToolKit`, and also directly importable from outside an agent context.
 
 ```swift
 import WebFetchKit
 
 let engine = WebFetchEngine(
-    allowedDomains: ["example.com"],  // nil で全許可
+    allowedDomains: ["example.com"],  // nil to allow all
     timeout: 30,
-    maxContentSize: 5 * 1024 * 1024  // 5MB
+    maxContentSize: 5 * 1024 * 1024  // 5 MB
 )
 
-// HTML → Markdown 変換付きフェッチ
+// Fetch with HTML-to-Markdown conversion
 let doc = try await engine.fetch(url: "https://example.com/article")
 print(doc.title ?? "no title")
-print(doc.text)         // Markdown 化された本文
-print(doc.wasTruncated) // maxContentSize 超過で切り詰めたか
+print(doc.text)         // Markdown-extracted body
+print(doc.wasTruncated) // true if truncated at maxContentSize
 
-// JSON フェッチ（生レスポンス）
+// Fetch JSON (raw response)
 let (status, body, url) = try await engine.fetchRawJSON(url: "https://api.example.com/data")
 
-// ヘッダーのみ取得
+// Fetch headers only
 let headers = try await engine.fetchHeaders(url: "https://example.com")
 ```
 
-**自動処理**:
-- HTML: SwiftSoup で本文抽出 → Markdown 変換
-- RSS/Atom フィード: item 一覧を Markdown に整形
-- DocC ドキュメント（Apple/Swift）: render JSON API から全文取得
-- Bot チャレンジ / Cloudflare 等: `WebFetchError.challengeBlocked` に昇格
-- バイナリコンテンツ（PDF・画像等）: `WebFetchError.binaryContent` に昇格
+**Automatic handling**:
+- HTML: body extraction via SwiftSoup → Markdown conversion
+- RSS/Atom feeds: formatted as a Markdown item list
+- DocC documentation (Apple/Swift): full text fetched from render JSON API
+- Bot challenges / Cloudflare interstitials: raised as `WebFetchError.challengeBlocked`
+- Binary content (PDF, images, etc.): raised as `WebFetchError.binaryContent`
 
 ---
 
-## 依存パッケージ
+## Dependencies
 
-| パッケージ | 用途 |
+| Package | Purpose |
 |---|---|
-| `swift-llm-client` (no-problem-dev) | `ToolSet` / `ToolSetBuilder` / `LLMTool` プロトコル |
-| `swift-sdk` (modelcontextprotocol) | MCP プロトコル実装 |
-| `SwiftSoup` | HTML パース・Markdown 変換 |
-| `swift-http-transport` (no-problem-dev) | HTTP トランスポート抽象化 |
-| `swift-structured-data` (no-problem-dev) | JSON パース・シリアライズ |
+| `swift-llm-client` (no-problem-dev) | `ToolSet` / `ToolSetBuilder` / `LLMTool` protocols |
+| `swift-sdk` (modelcontextprotocol) | MCP protocol implementation |
+| `SwiftSoup` | HTML parsing and Markdown conversion |
+| `swift-http-transport` (no-problem-dev) | HTTP transport abstraction |
+| `swift-structured-data` (no-problem-dev) | JSON parsing and serialization |
 
 ---
 
-## 関連ドキュメント
+## Related
 
-- [swift-llm-client](https://github.com/no-problem-dev/swift-llm-client) — `ToolSet`・`Tool` プロトコルの定義元
-- [swift-http-transport](https://github.com/no-problem-dev/swift-http-transport) — HTTP トランスポート抽象化
-- [Model Context Protocol](https://modelcontextprotocol.io/) — MCP 仕様
-
----
-
-最終更新: 2026-06-27
+- [swift-llm-client](https://github.com/no-problem-dev/swift-llm-client) — `ToolSet` and `Tool` protocol definitions
+- [swift-http-transport](https://github.com/no-problem-dev/swift-http-transport) — HTTP transport abstraction
+- [Model Context Protocol](https://modelcontextprotocol.io/) — MCP specification

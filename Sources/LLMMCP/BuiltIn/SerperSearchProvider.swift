@@ -8,8 +8,8 @@ import FoundationNetworking
 
 /// Serper (Google SERP) REST APIを使用した検索プロバイダー
 ///
-/// Serper APIキーが必要です。
-/// https://serper.dev/ から取得できます。
+/// Serper API キーが必要。
+/// https://serper.dev/ から取得できる。
 ///
 /// ## 使用例
 ///

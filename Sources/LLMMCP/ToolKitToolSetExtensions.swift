@@ -6,8 +6,8 @@ import LLMTool
 extension ToolSetBuilder {
     /// ToolKitを配列として構築
     ///
-    /// ToolSetBuilder内でToolKitを直接使用できるようにします。
-    /// ToolKitが提供するすべてのツールがToolSetに追加されます。
+    /// ToolSetBuilder 内で ToolKit を直接使用できるようにする。
+    /// ToolKit が提供するすべてのツールが ToolSet に追加される。
     ///
     /// ```swift
     /// let tools = ToolSet {
@@ -50,7 +50,7 @@ extension ToolSet {
     /// - Returns: 該当するToolKitのツール数（ToolKit情報がない場合は0）
     public func toolCount(for toolkitName: String) -> Int {
         // Note: 現在の実装ではToolKitの追跡は行わないため、
-        // この機能は将来の拡張用に予約されています
+        // この機能は将来の拡張用に予約されている
         0
     }
 }

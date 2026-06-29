@@ -10,8 +10,8 @@ import LLMTool
 
 /// JavaScriptCore ベースのスクリプト実行ツールを提供するToolKit
 ///
-/// LLM が生成した JavaScript コードをサンドボックス内で実行します。
-/// Swift ブリッジを通じて iOS API（ファイル操作・HTTP リクエスト等）へのアクセスを提供します。
+/// LLM が生成した JavaScript コードをサンドボックス内で実行する。
+/// Swift ブリッジを通じて iOS API（ファイル操作・HTTP リクエスト等）へのアクセスを提供する。
 ///
 /// ## 使用例
 ///
@@ -212,7 +212,7 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
 /// JavaScript に公開する Swift API のブリッジ
 ///
 /// JSContext に `ios` オブジェクトとして注入され、
-/// ファイル操作やHTTPリクエストなどの iOS API へのアクセスを提供します。
+/// ファイル操作や HTTP リクエストなどの iOS API へのアクセスを提供する。
 public final class ScriptBridge: @unchecked Sendable {
     /// アクセス許可されたパス（nil の場合は全パス許可）
     private let allowedPaths: [String]?
@@ -233,7 +233,7 @@ public final class ScriptBridge: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - allowedPaths: ファイルアクセスを許可するパスの配列（nil で全パス許可）
-    ///     iOS ではサンドボックスが OS レベルで制限するため、nil で問題ありません。
+    ///     iOS ではサンドボックスが OS レベルで制限するため、nil で問題ない。
     ///   - workingDirectory: 相対パスの基準ディレクトリ（nil でアプリの Documents ディレクトリ）
     ///   - httpTimeout: HTTP リクエストのタイムアウト秒数（デフォルト: 15）
     public init(

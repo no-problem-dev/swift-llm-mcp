@@ -5,10 +5,10 @@ import LLMClient
 import LLMTool
 import MCP
 
-/// MCP SDKのClientをラップし、自前の型に変換するアダプター
+/// MCP SDK の Client をラップし、自前の型に変換するアダプター
 ///
-/// SDKの詳細をカプセル化し、LLMMCPモジュールの公開APIから
-/// SDKの型を隠蔽します。
+/// SDK の詳細をカプセル化し、LLMMCP モジュールの公開 API から
+/// SDK の型を隠蔽する。
 internal actor SDKClientAdapter {
     // MARK: - Properties
 

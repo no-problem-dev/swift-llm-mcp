@@ -8,8 +8,8 @@ import FoundationNetworking
 
 /// Brave Search REST APIを使用した検索プロバイダー
 ///
-/// Brave Search APIキーが必要です。
-/// https://brave.com/search/api/ から取得できます。
+/// Brave Search API キーが必要。
+/// https://brave.com/search/api/ から取得できる。
 ///
 /// ## 使用例
 ///

@@ -6,9 +6,9 @@ import LLMTool
 
 /// 関連するツールをグループ化するプロトコル
 ///
-/// ToolKitは複数の関連ツールを束ねて提供します。
-/// 公式MCPサーバー（Memory、Filesystem等）と同等の機能を
-/// Swift内で直接実装するために使用します。
+/// ToolKit は複数の関連ツールを束ねて提供する。
+/// 公式 MCP サーバー（Memory、Filesystem 等）と同等の機能を
+/// Swift 内で直接実装するために使う。
 ///
 /// ## 使用例
 ///
@@ -34,14 +34,14 @@ import LLMTool
 /// }
 /// ```
 public protocol ToolKit: Sendable {
-    /// ToolKitの識別名
+    /// ToolKit の識別名
     ///
-    /// ログやデバッグ時の識別に使用されます。
+    /// ログやデバッグ時の識別に使う。
     var name: String { get }
 
-    /// このToolKitが提供するツールの配列
+    /// この ToolKit が提供するツールの配列
     ///
-    /// ToolSetに追加される際、この配列のすべてのツールが含まれます。
+    /// ToolSet に追加される際、この配列のすべてのツールが含まれる。
     var tools: [any Tool] { get }
 }
 
@@ -69,10 +69,10 @@ extension ToolKit {
 
 // MARK: - BuiltInTool
 
-/// 内蔵ToolKit用のツール
+/// 内蔵 ToolKit 用のツール
 ///
-/// ToolKitが提供する各ツールの共通機能を提供します。
-/// アノテーション情報を保持し、MCPToolCapabilitiesへの変換をサポートします。
+/// ToolKit が提供する各ツールの共通機能を持つ。
+/// アノテーション情報を保持し、MCPToolCapabilities への変換をサポートする。
 public struct BuiltInTool: Tool, Sendable {
     // MARK: - Properties
 
@@ -117,7 +117,7 @@ public struct BuiltInTool: Tool, Sendable {
 
     /// MCPToolCapabilitiesに変換
     ///
-    /// MCP仕様に従い、以下のルールで変換します：
+    /// MCP仕様に従い、以下のルールで変換する：
     /// - `isReadOnly`: `readOnlyHint`の値（デフォルト: false）
     /// - `isDangerous`: `readOnlyHint`がtrueの場合はfalse、
     ///                  それ以外は`destructiveHint`の値（デフォルト: true）

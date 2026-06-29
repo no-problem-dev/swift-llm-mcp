@@ -9,8 +9,8 @@ import LLMTool
 
 /// MCPサーバーを表すプロトコル
 ///
-/// MCPサーバーは複数のツールを提供し、それらを動的に取得・実行できます。
-/// 外部プロセスやHTTPエンドポイントとの橋渡しを行います。
+/// MCP サーバーは複数のツールを提供し、それらを動的に取得・実行できる。
+/// 外部プロセスや HTTP エンドポイントとの橋渡しを行う。
 ///
 /// ## 使用例
 ///
@@ -35,8 +35,8 @@ public protocol MCPServerProtocol: Sendable {
 
     /// 利用可能なツールを取得
     ///
-    /// MCPサーバーに接続し、提供されるツールの一覧を取得します。
-    /// 取得されたツールは`toolSelection`に基づいてフィルタリングされます。
+    /// MCP サーバーに接続し、提供されるツールの一覧を取得する。
+    /// 取得されたツールは `toolSelection` に基づいてフィルタリングされる。
     ///
     /// - Returns: 利用可能なツールの配列
     /// - Throws: 接続エラーまたはツール取得エラー
@@ -54,10 +54,10 @@ public protocol MCPServerProtocol: Sendable {
 
 // MARK: - MCPAuthorization
 
-/// MCPサーバーへの認証方式
+/// MCP サーバーへの認証方式
 ///
-/// Streamable HTTP トランスポートで使用される認証設定です。
-/// OAuth 2.1 の Bearer トークンが標準的な認証方式です。
+/// Streamable HTTP トランスポートで使用される認証設定。
+/// OAuth 2.1 の Bearer トークンが標準的な認証方式。
 ///
 /// ## 使用例
 ///
@@ -71,17 +71,17 @@ public protocol MCPServerProtocol: Sendable {
 public enum MCPAuthorization: Sendable {
     /// Bearer トークン認証（OAuth 2.1 標準）
     ///
-    /// `Authorization: Bearer <token>` ヘッダーを追加します。
+    /// `Authorization: Bearer <token>` ヘッダーを追加する。
     case bearer(String)
 
     /// カスタムヘッダー認証
     ///
-    /// 指定したヘッダー名と値を追加します。
+    /// 指定したヘッダー名と値を追加する。
     case header(String, String)
 
     /// 複数のカスタムヘッダー
     ///
-    /// 複数のヘッダーを追加します。
+    /// 複数のヘッダーを追加する。
     case headers([String: String])
 
     /// 認証なし
@@ -242,7 +242,7 @@ public struct MCPToolSelection: Sendable {
 /// MCPツールの操作能力を表す排他的な分類
 ///
 /// Bool の組み合わせで表現していた `isReadOnly` / `isDangerous` を
-/// 論理的に矛盾のない排他的な3状態に整理したものです。
+/// 論理的に矛盾のない排他的な3状態に整理したもの。
 public enum MCPToolCapabilities: Sendable, Equatable {
     /// 読み取りのみ。安全な操作
     case readOnly
@@ -287,8 +287,8 @@ extension MCPServerProtocol {
 
 /// MCPサーバーへの接続を表す具象型
 ///
-/// 外部MCPサーバーに接続し、ツールを取得・実行します。
-/// stdioまたはHTTP経由での接続をサポートします。
+/// 外部 MCP サーバーに接続し、ツールを取得・実行する。
+/// stdio または HTTP 経由での接続をサポートする。
 ///
 /// ## stdio接続の例
 ///
@@ -357,8 +357,8 @@ public struct MCPServer: MCPServerProtocol {
 
     /// HTTPトランスポート（Streamable HTTP）でMCPサーバーに接続
     ///
-    /// リモートMCPサーバーに接続するための標準的な方法です。
-    /// OAuth 2.1 Bearer トークン認証をサポートしています。
+    /// リモート MCP サーバーに接続するための標準的な方法。
+    /// OAuth 2.1 Bearer トークン認証をサポートする。
     ///
     /// ## 使用例
     ///
@@ -482,8 +482,8 @@ extension MCPServer {
 extension MCPServer {
     /// Notion MCPサーバーに接続
     ///
-    /// Notionの公式ホステッドMCPサーバーに接続します。
-    /// Streamable HTTP トランスポートを使用し、Bearer トークン認証を行います。
+    /// Notion の公式ホステッド MCP サーバーに接続する。
+    /// Streamable HTTP トランスポートを使用し、Bearer トークン認証を行う。
     ///
     /// ## 使用例
     ///

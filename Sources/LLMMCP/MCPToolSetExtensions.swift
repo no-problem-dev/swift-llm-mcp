@@ -6,8 +6,8 @@ import LLMTool
 
 /// MCPサーバーをToolSetBuilderで使用するためのラッパー
 ///
-/// MCPサーバーはToolSetに直接追加でき、遅延接続・ツール取得を行います。
-/// これにより、宣言的なDSLでMCPサーバーを構成できます。
+/// MCP サーバーは ToolSet に直接追加でき、遅延接続・ツール取得を行う。
+/// これにより、宣言的な DSL で MCP サーバーを構成できる。
 ///
 /// ## 使用例
 ///
@@ -55,8 +55,8 @@ extension ToolSetBuilder {
 
 /// MCPサーバーのプレースホルダーツール
 ///
-/// ToolSet構築時に使用される一時的なプレースホルダーです。
-/// 実際のMCPツールは `resolveMCPTools()` で取得されます。
+/// ToolSet 構築時に使用される一時的なプレースホルダー。
+/// 実際の MCP ツールは `resolvingMCPServers()` で取得される。
 public final class MCPServerPlaceholder: Tool, @unchecked Sendable {
     /// ラップしているMCPサーバー
     public let server: any MCPServerProtocol
@@ -94,8 +94,8 @@ public final class MCPServerPlaceholder: Tool, @unchecked Sendable {
 extension ToolSet {
     /// MCPサーバーのプレースホルダーを実際のツールに解決
     ///
-    /// ToolSetに含まれるMCPサーバープレースホルダーを、
-    /// 実際のMCPツールに置き換えた新しいToolSetを返します。
+    /// ToolSet に含まれる MCP サーバープレースホルダーを、
+    /// 実際の MCP ツールに置き換えた新しい ToolSet を返す。
     ///
     /// - Returns: MCPツールが解決されたToolSet
     /// - Throws: MCP接続エラーまたはツール取得エラー
