@@ -20,7 +20,7 @@ let package = Package(
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.12.1"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.6.0"),
         .package(url: "https://github.com/no-problem-dev/swift-http-transport.git", from: "1.1.0"),
-        .package(url: "https://github.com/no-problem-dev/swift-structured-data.git", from: "1.3.0"),
+        .package(url: "https://github.com/no-problem-dev/swift-structured-data.git", from: "2.0.0"),
     ],
     targets: [
         // 純粋な Web フェッチ/抽出エンジン（MCP・LLMTool 非依存）

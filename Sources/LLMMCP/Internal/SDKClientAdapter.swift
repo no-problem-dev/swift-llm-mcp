@@ -182,7 +182,7 @@ internal actor SDKClientAdapter {
     /// MCP SDK の `Value` 形式のスキーマを ``JSONSchema`` へ変換する。
     /// `Value` は Encodable なので structured-data 経由で JSONSchema へ直接デコードする。
     private func convertValueToJSONSchema(_ value: MCP.Value) -> JSONSchema {
-        (try? StructuredValue.encoding(value).decode(JSONSchema.self))
+        (try? StructuredValue.encoded(value).decode(JSONSchema.self))
             ?? .object(properties: [:], required: [])
     }
 
