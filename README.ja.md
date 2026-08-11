@@ -24,7 +24,7 @@ swift-llm-agent から分離されたツール解決レイヤー。エージェ�
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-llm-mcp.git", .upToNextMinor(from: "0.1.0")),
+    .package(url: "https://github.com/no-problem-dev/swift-llm-mcp.git", .upToNextMinor(from: "0.2.0")),
 ],
 ```
 
