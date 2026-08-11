@@ -1,5 +1,5 @@
 {
-  "originHash" : "5672ca21440d188e0133a61aaf5047ed32691cade355ec0a3028d2184ece4348",
+  "originHash" : "d887a1a6a3652319399106564702f10df94995baf73b6765b862b7109b001dca",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/no-problem-dev/swift-http-transport.git",
       "state" : {
-        "revision" : "9e72aec5d099fe5fa6ff3cb43263038bd307f07b",
-        "version" : "1.1.2"
+        "revision" : "c45624d72eb19ab4500d5ff0dbce3ad094714829",
+        "version" : "2.1.0"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/no-problem-dev/swift-llm-client.git",
       "state" : {
-        "revision" : "3640d5ee2ad8d5f903fc52656667dad60755a3c7",
-        "version" : "4.0.0"
+        "revision" : "01385abac9954a703226a52d5c93b10eb6c8ac78",
+        "version" : "5.0.0"
       }
     },
     {

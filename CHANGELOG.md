@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING** — raised the swift-http-transport pin to 2.0.0 and the swift-llm-client pin to
+  5.0.0. The http-transport bump is breaking here because `HTTPTransport` is a *public* dependency:
+  it appears in the initializers of `OpenAIImageProvider`, `FalAIImageProvider` and
+  `GeminiImageProvider`, and in `WebFetchEngine.transport`. A caller supplying its own transport
+  has to be on 2.x. The llm-client bump is internal and changes nothing a caller can see.
+
 ## [0.3.0] - 2026-08-11
 
 ### Fixed
