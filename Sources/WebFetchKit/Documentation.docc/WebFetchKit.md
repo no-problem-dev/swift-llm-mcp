@@ -1,56 +1,80 @@
 # ``WebFetchKit``
 
-MCP・LLMTool に依存しない純粋な Web フェッチ／HTML 抽出エンジン。
+Fetch a URL and get back text an LLM can read, with no MCP or tool-calling dependency.
 
 ## Overview
 
-`WebFetchKit` は URL を取得し、LLM が消費しやすいテキスト（HTML は Markdown）に変換する
-コアエンジンライブラリ。MCP サーバーや LLMTool アダプタには一切依存せず、
-`LLMMCP` の `WebToolKit`、`web-fetch-probe`、その他エージェントから再利用できる。
+Handing a model raw HTML wastes most of its context on navigation, scripts and styling.
+``WebFetchEngine`` takes a URL and returns the part worth reading: HTML becomes Markdown, RSS and
+Atom become a Markdown item list, and everything else comes back as decoded text.
+
+It knows nothing about MCP or tool calling, which is why the same engine backs `LLMMCP`'s
+`WebToolKit`, the `web-fetch-probe` executable, and any agent that wants pages without the tool
+layer.
 
 ```swift
 import WebFetchKit
 
-// エンジンを初期化（全パラメータにデフォルト値あり）
 let engine = WebFetchEngine(
     allowedDomains: ["docs.swift.org", "github.com"],
     timeout: 30,
     maxContentSize: 5 * 1024 * 1024
 )
 
-// HTML ページを取得して Markdown に変換
 let doc = try await engine.fetch(url: "https://docs.swift.org/swift-book/")
-print(doc.title ?? "")   // ページタイトル
-print(doc.text)          // 抽出済み Markdown
-print(doc.wasTruncated)  // maxContentSize 超過で切り詰めたか
-
-// JSON エンドポイントを取得（パースは呼び出し側）
-let (status, body, url) = try await engine.fetchRawJSON(
-    url: "https://api.example.com/data",
-    method: "POST",
-    body: #"{"query":"hello"}"#
-)
-
-// HTTP ヘッダーのみ取得（HEAD リクエスト）
-let headers = try await engine.fetchHeaders(url: "https://example.com/file.pdf")
-print(headers.statusCode)
+print(doc.title ?? "")
+print(doc.text)
+print(doc.wasTruncated)  // true when the body exceeded maxContentSize
 ```
 
-`WebFetchEngine` は HTML ページを自動判定し、SwiftSoup ベースの `SwiftSoupContentExtractor`
-で本文を抽出して Markdown に変換する。RSS/Atom フィードはアイテム一覧の Markdown に整形し、
-DocC ドキュメント（Apple/Swift）は render JSON から全文を取得する。
-bot チャレンジや JS 必須インタースティシャルは `WebFetchError.challengeBlocked` として
-明示的に昇格されるため、LLM が空コンテンツを成功と誤認しない。
+### Responses that look successful but are not
 
-コンテンツ抽出戦略を差し替えるには `WebContentExtractor` プロトコルを実装し、
-`WebFetchEngine.init(extractor:)` に渡す。
+Two kinds of HTTP 200 would otherwise reach the model as if they were the page, and both are
+turned into errors instead.
+
+A **bot challenge or "JavaScript required" interstitial** throws
+``WebFetchError/challengeBlocked(reason:)``. Without this the model receives a reCAPTCHA notice and
+treats it as the article's content. Detection is conservative: a matching page title is decisive,
+but body markers count only when the extracted text is under 1500 characters, so a real article
+discussing Cloudflare is not rejected.
+
+**Binary content** — PDF, image, audio, video — throws ``WebFetchError/binaryContent(contentType:)``
+rather than arriving as mojibake. The judgement is made from the Content-Type header, so a binary
+body served without one is missed.
+
+### Handling long and oversized pages
+
+`maxContentSize` is applied after the body has been received in full. It bounds what gets decoded,
+not what gets downloaded or held in memory.
+
+The two fetch methods then diverge, deliberately. ``WebFetchEngine/fetch(url:method:headers:body:raw:)``
+truncates and sets ``FetchedDocument/wasTruncated``, so an oversized page still yields its opening
+section — check that flag if completeness matters.
+``WebFetchEngine/fetchRawJSON(url:method:headers:body:)`` throws
+``WebFetchError/contentTooLarge(size:maxSize:)`` instead, because half a JSON document cannot be parsed.
+
+Redirects are left to the transport and no redirect limit is imposed here. The URL on the returned
+document is the one that was requested, not the final one after redirects.
+
+### Encoding
+
+Charset is resolved in order: the Content-Type header, a `<meta charset>` declaration in the first
+4 KB, UTF-8, then Shift_JIS, EUC-JP, Windows-1252, ISO-8859-1 and ASCII.
+
+The self-validating encodings come before the permissive ones on purpose. Latin-1 and CP1252 accept
+any byte sequence, so putting either first would turn every undeclared Japanese page into mojibake
+instead of letting Shift_JIS claim it.
+
+### Replacing the extractor
+
+The default ``SwiftSoupContentExtractor`` is heuristic and can pick the wrong element. Conform to
+``WebContentExtractor`` and pass your type to the engine to override it for sites you care about.
 
 ```swift
 import WebFetchKit
 
 struct CustomExtractor: WebContentExtractor {
     func extract(html: String, url: URL) throws -> ExtractedContent {
-        // 独自の抽出ロジック
         ExtractedContent(title: "Custom", content: "...")
     }
 }
@@ -58,23 +82,23 @@ struct CustomExtractor: WebContentExtractor {
 let engine = WebFetchEngine(extractor: CustomExtractor())
 ```
 
-`WebFetchKit` が属する `swift-llm-mcp` パッケージでは、`LLMMCP` が MCP サーバー接続と
-内蔵 ToolKit を提供し、その `WebToolKit` がこのエンジンを LLM ツールとして公開する。
+Return something rather than throwing on a thin page: the engine treats a throw here as a failed
+fetch, whereas returning little text is a result the caller can still judge.
 
 ## Topics
 
-### フェッチエンジン
+### Fetching
 
 - ``WebFetchEngine``
 - ``FetchedDocument``
 - ``WebFetchHeadersResult``
 
-### コンテンツ抽出
+### Extracting readable content
 
 - ``WebContentExtractor``
 - ``ExtractedContent``
 - ``SwiftSoupContentExtractor``
 
-### エラー型
+### Errors
 
 - ``WebFetchError``

@@ -293,7 +293,7 @@ struct MetadataExtractionTests {
         let extractor = SwiftSoupContentExtractor()
         let result = try extractor.extract(html: html, url: URL(string: "https://example.com")!)
 
-        // og:title が優先される
+        // og:title wins over <title>, because it omits the site suffix.
         #expect(result.title == "OG Title")
         #expect(result.metadata["description"] == "A page description")
         #expect(result.metadata["og:image"] == "https://example.com/image.jpg")
@@ -364,7 +364,7 @@ struct PostProcessingTests {
     func collapsesConsecutiveDuplicateLines() {
         let input = "```\n```\n```\nReal text\nReal text\n---\n---"
         let result = SwiftSoupContentExtractor.postProcess(input)
-        // 連続同一行は1つに畳まれる
+        // Consecutive identical lines collapse to one.
         #expect(result == "```\nReal text\n---")
     }
 
@@ -372,7 +372,7 @@ struct PostProcessingTests {
     func preservesTableRows() {
         let input = "| a | b |\n| a | b |"
         let result = SwiftSoupContentExtractor.postProcess(input)
-        // テーブル行（| 始まり）は構造保持のため畳まない
+        // Except in a table, where identical rows are data.
         #expect(result == "| a | b |\n| a | b |")
     }
 }
@@ -432,7 +432,7 @@ struct NavLinkBlockTests {
         """
         let extractor = SwiftSoupContentExtractor()
         let result = try extractor.extract(html: html, url: URL(string: "https://example.com")!)
-        // 記事タイトル一覧（長文リンク・ネガティブclassなし）は本文として保持
+        // An unlabelled list of article titles is content, not navigation, so it survives.
         #expect(result.content.contains("Swift concurrency"))
         #expect(result.content.contains("resilient web fetch"))
     }
@@ -461,7 +461,7 @@ struct ThinContentFallbackTests {
 
     @Test("Recovers table/font layout body text")
     func recoversTableLayoutText() throws {
-        // td 内に本文がある旧式レイアウト（convertToMarkdown は td をスキップする）
+        // Old-style table layout: the body sits in a <td>, which the Markdown walker skips.
         let longText = String(repeating: "This essay has substantial prose content. ", count: 10)
         let html = """
         <html><body>
@@ -470,14 +470,14 @@ struct ThinContentFallbackTests {
         """
         let extractor = SwiftSoupContentExtractor()
         let result = try extractor.extract(html: html, url: URL(string: "https://example.com")!)
-        // body テキストフォールバックで本文を救済できる
+        // The body-text fallback is what rescues it.
         #expect(result.content.contains("substantial prose content"))
         #expect(result.content.count >= 200)
     }
 
     @Test("Falls back to meta description for empty SPA shell")
     func fallsBackToMetaDescription() throws {
-        // 本文が空の SPA シェル → og:description を最低限の本文に
+        // An empty SPA shell falls back to og:description as the minimum viable body.
         let html = """
         <html><head>
             <meta property="og:description" content="This is a meaningful page summary that an LLM can actually use as content.">
@@ -492,7 +492,8 @@ struct ThinContentFallbackTests {
 
     @Test("Keeps short but clean article without fallback contamination")
     func keepsShortCleanArticle() throws {
-        // 短い正常記事 + 別所のナビ。短くても fallback で nav を混ぜない。
+        // A short but genuine article next to navigation. Short is not empty, so the
+        // fallback must not fire and pull the menu in.
         let html = """
         <html><body>
             <ul class="menu"><li><a href="/a">Home</a></li><li><a href="/b">About</a></li></ul>
@@ -535,7 +536,7 @@ struct FeedRenderingTests {
         #expect(result.markdown.contains("# My Tech Feed"))
         #expect(result.markdown.contains("## First Post"))
         #expect(result.markdown.contains("https://example.com/1"))
-        #expect(result.markdown.contains("Summary of the first post."))  // HTML 除去済み
+        #expect(result.markdown.contains("Summary of the first post."))  // HTML inside the summary is flattened.
         #expect(result.markdown.contains("## Second Post"))
     }
 
@@ -666,7 +667,7 @@ struct EncodingDetectionTests {
 
     @Test("Decodes Shift_JIS declared only in HTML meta (no HTTP charset)")
     func decodesShiftJISFromMeta() throws {
-        // ITmedia 等: HTTP ヘッダーに charset 無し、meta だけで Shift_JIS 宣言
+        // The ITmedia shape: no charset in the HTTP header, Shift_JIS declared only in <meta>.
         let html = "<html><head><meta charset=\"Shift_JIS\"></head><body>日本語のテスト本文</body></html>"
         let data = try #require(html.data(using: .shiftJIS))
         let decoded = EncodingDetector.decode(data, contentType: nil)
@@ -766,7 +767,7 @@ struct EmptyCodeBlockTests {
         """
         let extractor = SwiftSoupContentExtractor()
         let result = try extractor.extract(html: html, url: URL(string: "https://example.com")!)
-        // 空コードブロックの ``` フェンスが出力されない
+        // An empty code element must not emit a bare fence.
         #expect(!result.content.contains("```"))
         #expect(result.content.contains("Intro text"))
     }

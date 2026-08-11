@@ -2,16 +2,24 @@ import Foundation
 
 // MARK: - ReportDiff
 //
-// 2 つの probe レポート（JSON = [ProbeResult]）を突き合わせ、抽出器/フェッチ改修の
-// 効果を回帰ゲートとして可視化する。
-//   - 改善: 失敗→成功、thin→ok、無駄トークン削減
-//   - 回帰: 成功→失敗、ok→thin、本文の不当な縮小（過剰サニタイズ）、無駄増加
+// Compares two probe reports so a change to the fetcher or extractor can be judged rather
+// than guessed at. This is the regression gate.
 //
-// URL をキーに突合する。コーパスが変わって増減した URL も検出する。
+//   Improvement: failure -> success, thin -> ok, less wasted content.
+//   Regression:  success -> failure, ok -> thin, content shrinking sharply
+//                (over-aggressive sanitising), more waste.
+//
+// Matched by URL, so entries added to or removed from the corpus are reported separately
+// rather than silently ignored.
 
+/// Compares two probe report JSON files and renders the difference as Markdown.
 enum ReportDiff {
 
-    /// 抽出品質の良さ順位（高いほど良い）
+    /// Ranks an outcome so two runs can be compared: 2 for extracted content, 1 for thin
+    /// content, 0 for any failure.
+    ///
+    /// Deliberately coarse — a 404 and a timeout both rank 0, because the point is whether
+    /// a URL got better or worse, not how it failed.
     static func qualityRank(_ layer: FailureLayer) -> Int {
         switch layer {
         case .ok: return 2
@@ -20,10 +28,15 @@ enum ReportDiff {
         }
     }
 
-    /// 本文がこの割合を超えて縮小し、かつ絶対量も大きい場合は「良コンテンツ喪失」の疑い
+    /// Fraction a page's content must shrink by before it counts as lost content.
+    ///
+    /// Both this and ``shrinkAbsThreshold`` must be exceeded, so trimming boilerplate off a
+    /// short page does not register while gutting a long article does.
     static let shrinkRatioThreshold = 0.25
+    /// Characters a page's content must shrink by, alongside ``shrinkRatioThreshold``.
     static let shrinkAbsThreshold = 1000
 
+    /// How one URL changed between the two runs.
     struct PairDelta {
         let url: String
         let category: ProbeCategory
@@ -36,29 +49,43 @@ enum ReportDiff {
         var wastedAfter: Int { after.noise?.totalWastedChars ?? 0 }
         var wastedDelta: Int { wastedAfter - wastedBefore }
 
-        /// 層が悪化した
+        /// The outcome got worse: content became thin, or a working page stopped working.
         var isLayerRegression: Bool { rankDelta < 0 }
-        /// 両方とも成功扱いだが本文が不当に縮小（過剰除去の疑い）
+        /// Both runs succeeded but the content shrank sharply, suggesting over-aggressive removal.
         var isContentShrink: Bool {
             guard qualityRank(before.layer) >= 1, qualityRank(after.layer) >= 1 else { return false }
             guard before.contentLength > 0 else { return false }
             let ratio = Double(before.contentLength - after.contentLength) / Double(before.contentLength)
             return ratio > shrinkRatioThreshold && (before.contentLength - after.contentLength) > shrinkAbsThreshold
         }
-        /// 無駄増は「層が改善していない」場合のみ回帰とみなす
-        /// （failure→success で新たに本文を得たケースは回帰ではない）
+        /// More waste counts as a regression only when the outcome did not improve.
+        ///
+        /// A page that went from failing to succeeding gained waste because it gained
+        /// content, which is not a regression.
         var isWastedRegression: Bool { wastedDelta > 50 && rankDelta <= 0 }
+        /// True if any of the three regression tests fires.
         var isRegression: Bool { isLayerRegression || isContentShrink || isWastedRegression }
+        /// True if the outcome improved or waste dropped by more than 50 characters.
+        ///
+        /// Not the negation of ``isRegression``: a page can be both, by improving its layer
+        /// while shrinking sharply.
         var isImprovement: Bool { rankDelta > 0 || wastedDelta < -50 }
     }
 
+    /// Decodes a probe report JSON file.
+    ///
+    /// - Throws: A file-system or decoding error. A report written by an older version with
+    ///   a different ``ProbeResult`` shape fails here rather than diffing partially.
     static func loadResults(_ path: String) throws -> [ProbeResult] {
         let url = URL(fileURLWithPath: path)
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode([ProbeResult].self, from: data)
     }
 
-    /// 2 ファイルを比較して Markdown を返す。
+    /// Compares two report files and renders the difference as Markdown.
+    ///
+    /// URLs appearing twice in one report keep their first occurrence. Output is Japanese,
+    /// and this returns a document rather than an exit status — reading it is a human step.
     static func diffMarkdown(beforePath: String, afterPath: String) throws -> String {
         let before = try loadResults(beforePath)
         let after = try loadResults(afterPath)
@@ -79,7 +106,7 @@ enum ReportDiff {
         out += "- after:  `\(afterPath)` (\(after.count) URL)\n"
         out += "- 共通比較対象: \(pairs.count) URL\n\n"
 
-        // 集計 delta
+        // Aggregate counts, so the headline numbers come before the per-URL detail.
         out += "## 集計デルタ\n\n"
         out += "| 指標 | before | after | Δ |\n|---|---:|---:|---:|\n"
         out += aggRow("ok", before.filter { $0.layer == .ok }.count, after.filter { $0.layer == .ok }.count)
@@ -100,7 +127,7 @@ enum ReportDiff {
                 : "⚠️ **無駄トークンが \((-savedTok).commas) 増加**\n\n"
         }
 
-        // 回帰
+        // Regressions first: this is the section that should block a change.
         let regressions = pairs.filter { $0.isRegression }.sorted {
             (qualityRank($0.after.layer) - qualityRank($0.before.layer)) < (qualityRank($1.after.layer) - qualityRank($1.before.layer))
         }
@@ -119,7 +146,7 @@ enum ReportDiff {
             out += "\n"
         }
 
-        // 改善
+        // Improvements.
         let improvements = pairs.filter { $0.isImprovement && !$0.isRegression }.sorted { $0.wastedDelta < $1.wastedDelta }
         out += "## 🟢 改善（\(improvements.count) 件）\n\n"
         if improvements.isEmpty {
@@ -132,7 +159,7 @@ enum ReportDiff {
             out += "\n"
         }
 
-        // コーパス増減
+        // URLs present in only one report, so a corpus edit is not mistaken for a result change.
         if !added.isEmpty || !removed.isEmpty {
             out += "## コーパス差分\n\n"
             if !added.isEmpty { out += "- 追加: \(added.count) 件\n" }

@@ -1,3 +1,7 @@
+// JavaScriptCore is an Apple-platform framework with no counterpart in
+// swift-corelibs, so this tool kit -- and the `run_script` tool it vends -- is
+// absent on platforms that lack it rather than failing the whole build.
+#if canImport(JavaScriptCore)
 import Foundation
 import HTTPTransport
 import StructuredDataCore
@@ -8,12 +12,16 @@ import LLMTool
 
 // MARK: - ScriptToolKit
 
-/// JavaScriptCore ベースのスクリプト実行ツールを提供するToolKit
+/// Runs model-written JavaScript in a JavaScriptCore virtual machine.
 ///
-/// LLM が生成した JavaScript コードをサンドボックス内で実行する。
-/// Swift ブリッジを通じて iOS API（ファイル操作・HTTP リクエスト等）へのアクセスを提供する。
+/// Use it for the work no fixed tool covers: reshaping data, transforming text, arithmetic
+/// over a fetched document. Each run gets a fresh virtual machine, so nothing carries over
+/// between calls — a script cannot leave state for the next one.
 ///
-/// ## 使用例
+/// The JavaScript environment is bare: no `require`, no timers, no DOM, and no `async`.
+/// What it does have is `console` and the `ios` object supplied by ``ScriptBridge``, whose
+/// file access is bounded by the bridge's allowed paths. Give the bridge a narrow list; the
+/// default bridge has no path restriction at all.
 ///
 /// ```swift
 /// let tools = ToolSet {
@@ -23,28 +31,24 @@ import LLMTool
 ///     )
 /// }
 /// ```
-///
-/// ## 提供されるツール
-///
-/// - `run_script`: JavaScript コードを実行し結果を返す
 public final class ScriptToolKit: ToolKit, @unchecked Sendable {
     // MARK: - Properties
 
     public let name: String = "script"
 
-    /// Swift ブリッジ（JS に公開する API）
     private let bridge: ScriptBridge
 
-    /// スクリプト実行のタイムアウト（秒）
     private let timeout: TimeInterval
 
     // MARK: - Initialization
 
-    /// ScriptToolKitを作成
+    /// Creates the kit.
     ///
     /// - Parameters:
-    ///   - bridge: JS に公開する Swift API のブリッジ
-    ///   - timeout: スクリプト実行のタイムアウト秒数（デフォルト: 30）
+    ///   - bridge: The `ios` API exposed to scripts. The default permits file access
+    ///     anywhere this process can reach.
+    ///   - timeout: Seconds before the tool reports a timeout. It is a deadline on the
+    ///     reply, not preemption of the script — see the `run_script` tool.
     public init(
         bridge: ScriptBridge = ScriptBridge(),
         timeout: TimeInterval = 30
@@ -61,7 +65,15 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
 
     // MARK: - Tool Definition
 
-    /// run_script ツール
+    /// The `run_script` tool: evaluate JavaScript and return its console output and final value.
+    ///
+    /// A JavaScript exception comes back as a `ToolResult.error` rather than a thrown error,
+    /// so the model can read the message and correct its code.
+    ///
+    /// The timeout races the evaluation against a sleep and reports
+    /// ``ScriptToolKitError/timeout(seconds:)`` when the sleep wins. JavaScriptCore
+    /// evaluation cannot be cancelled, so this bounds when a timeout is *decided*, not when
+    /// a runaway script stops: an infinite loop keeps running and keeps the task group open.
     private var runScriptTool: BuiltInTool {
         BuiltInTool(
             name: "run_script",
@@ -94,7 +106,7 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
         ) { [self] data in
             let input = try JSONDecoder().decode(RunScriptInput.self, from: data)
 
-            // タイムアウト付きで実行
+            // Race the evaluation against a sleep; whichever finishes first wins.
             return try await withThrowingTaskGroup(of: ToolResult.self) { group in
                 group.addTask { [self] in
                     try await self.executeScript(code: input.code)
@@ -114,47 +126,44 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
 
     // MARK: - Script Execution
 
-    /// JavaScript コードを実行
+    /// Evaluates the code in a fresh virtual machine and formats the console output and result.
+    ///
+    /// Synchronous throughout: `evaluateScript` blocks its thread until the script finishes,
+    /// which is why the timeout has to live outside this method.
     private func executeScript(code: String) async throws -> ToolResult {
-        // JSContext はメインスレッドで作成・操作する必要はないが、
-        // 同一スレッドで作成・評価を行う
+        // A private virtual machine per run, so nothing leaks between tool calls. Creation
+        // and evaluation stay on one thread because JSContext is not thread-safe.
         let vm = JSVirtualMachine()!
         let context = JSContext(virtualMachine: vm)!
 
-        // ログバッファ
         let logBuffer = LogBuffer()
 
-        // 例外ハンドラ
+        // JavaScriptCore reports exceptions through this handler rather than by returning nil.
         var scriptError: String?
         context.exceptionHandler = { _, exception in
             scriptError = exception?.toString() ?? "Unknown JavaScript error"
         }
 
-        // ブリッジ API を注入
         bridge.install(into: context, logBuffer: logBuffer)
-
-        // console.log を提供
         installConsole(into: context, logBuffer: logBuffer)
 
-        // スクリプトを実行
         let result = context.evaluateScript(code)
 
-        // エラーチェック
+        // An exception discards the console output collected before it.
         if let error = scriptError {
             return .error("Script error: \(error)")
         }
 
-        // 結果を組み立て
+        // Console output first, then the final value.
         var output = ""
 
-        // ログ出力があれば先に追加
         let logs = logBuffer.flush()
         if !logs.isEmpty {
             output += logs.joined(separator: "\n")
             output += "\n"
         }
 
-        // 戻り値を追加
+        // Objects are pretty-printed as JSON with sorted keys; everything else is stringified.
         if let result, !result.isUndefined, !result.isNull {
             let resultString: String
             if result.isObject, let object = result.toObject() {
@@ -173,7 +182,10 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
         return .text(output)
     }
 
-    /// console オブジェクトを JSContext に注入
+    /// Installs `console.log`, `console.warn` and `console.error`, all collected into `logBuffer`.
+    ///
+    /// Each takes a single argument, unlike the browser's variadic `console.log`, so extra
+    /// arguments are dropped.
     private func installConsole(into context: JSContext, logBuffer: LogBuffer) {
         let console = JSValue(newObjectIn: context)!
 
@@ -209,33 +221,40 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
 
 // MARK: - ScriptBridge
 
-/// JavaScript に公開する Swift API のブリッジ
+/// The `ios` object that scripts use to reach the file system and the network.
 ///
-/// JSContext に `ios` オブジェクトとして注入され、
-/// ファイル操作や HTTP リクエストなどの iOS API へのアクセスを提供する。
+/// Five members: `ios.cwd`, `ios.readFile(path)`, `ios.writeFile(path, content)`,
+/// `ios.listFiles(path)`, `ios.fetch(url)` and `ios.log(message)`.
+///
+/// Failures are returned as strings that begin with `[error]`, not thrown, because
+/// JavaScriptCore blocks cannot throw into the script. A script therefore cannot tell a
+/// failure from file content that happens to start with `[error]`.
+///
+/// `allowedPaths` bounds the file members only. `ios.fetch` has no equivalent restriction
+/// and will reach any URL.
 public final class ScriptBridge: @unchecked Sendable {
-    /// アクセス許可されたパス（nil の場合は全パス許可）
+    /// Directories scripts may read and write, already tilde-expanded. `nil` allows everything.
     private let allowedPaths: [String]?
 
-    /// 相対パスの基準となる作業ディレクトリ
+    /// Where relative paths in the file members resolve. Also the value of `ios.cwd`.
     private let workingDirectory: String
 
-    /// FileManager
     private let fileManager: FileManager
 
-    /// HTTP トランスポート
     private let transport: any HTTPTransport
 
-    /// HTTP リクエストのタイムアウト
     private let httpTimeout: TimeInterval
 
-    /// ScriptBridge を作成
+    /// Creates a bridge, building a `URLSession`-backed transport unless one is supplied.
     ///
     /// - Parameters:
-    ///   - allowedPaths: ファイルアクセスを許可するパスの配列（nil で全パス許可）
-    ///     iOS ではサンドボックスが OS レベルで制限するため、nil で問題ない。
-    ///   - workingDirectory: 相対パスの基準ディレクトリ（nil でアプリの Documents ディレクトリ）
-    ///   - httpTimeout: HTTP リクエストのタイムアウト秒数（デフォルト: 15）
+    ///   - allowedPaths: Directories scripts may touch. A leading `~` is expanded. `nil`
+    ///     imposes no boundary, which is reasonable on iOS where the sandbox is the
+    ///     boundary, and is not on macOS.
+    ///   - workingDirectory: Where relative paths resolve. Defaults to the app's Documents directory.
+    ///   - httpTimeout: Per-request timeout for `ios.fetch`, in seconds. It is the only
+    ///     thing bounding that call, which blocks the calling thread while it runs.
+    ///   - transport: Substitute one in tests to avoid real network calls.
     public init(
         allowedPaths: [String]? = nil,
         workingDirectory: String? = nil,
@@ -261,13 +280,16 @@ public final class ScriptBridge: @unchecked Sendable {
         self.httpTimeout = httpTimeout
     }
 
-    /// パスを解決し、許可されているかチェック
+    /// Resolves a script's path and rejects it if it falls outside ``allowedPaths``.
     ///
-    /// 相対パス（`/` で始まらないパス）は `workingDirectory` を基準に解決される。
+    /// Anything not starting with `/` resolves against ``workingDirectory``, and `..`
+    /// segments are collapsed first. Like ``FileSystemToolKit``, the comparison is a string
+    /// prefix rather than a path-component one, and symlinks are not resolved.
+    ///
+    /// - Throws: ``ScriptToolKitError/accessDenied(path:)``.
     private func validatePath(_ path: String) throws -> String {
         let expandedPath = NSString(string: path).expandingTildeInPath
 
-        // 相対パスなら workingDirectory を基準に解決
         let absolutePath: String
         if expandedPath.hasPrefix("/") {
             absolutePath = expandedPath
@@ -277,7 +299,7 @@ public final class ScriptBridge: @unchecked Sendable {
 
         let resolvedPath = URL(fileURLWithPath: absolutePath).standardizedFileURL.path
 
-        // allowedPaths が nil なら全パス許可
+        // No list means no boundary.
         guard let allowedPaths else { return resolvedPath }
 
         let isAllowed = allowedPaths.contains { allowedPath in
@@ -291,17 +313,17 @@ public final class ScriptBridge: @unchecked Sendable {
         return resolvedPath
     }
 
-    /// JSContext に iOS ブリッジ API を注入
+    /// Installs the `ios` object into a context, routing its log output to `logBuffer`.
     func install(into context: JSContext, logBuffer: LogBuffer) {
         let ios = JSValue(newObjectIn: context)!
 
-        // ios.cwd → String (作業ディレクトリパス)
+        // ios.cwd -> String
         ios.setObject(
             workingDirectory,
             forKeyedSubscript: "cwd" as NSString
         )
 
-        // ios.readFile(path) → String
+        // ios.readFile(path) -> String, or an "[error] ..." string on failure.
         let readFile: @convention(block) (String) -> String = { [self] path in
             do {
                 let validPath = try validatePath(path)
@@ -316,7 +338,8 @@ public final class ScriptBridge: @unchecked Sendable {
             }
         }
 
-        // ios.writeFile(path, content) → Bool
+        // ios.writeFile(path, content) -> Bool. Creates parent directories; overwrites
+        // without requiring a prior read, unlike FileSystemToolKit's write_file.
         let writeFile: @convention(block) (String, String) -> Bool = { [self] path, content in
             do {
                 let validPath = try validatePath(path)
@@ -334,7 +357,7 @@ public final class ScriptBridge: @unchecked Sendable {
             }
         }
 
-        // ios.listFiles(path) → [String]
+        // ios.listFiles(path) -> [String]. On failure the array holds one "[error] ..." entry.
         let listFiles: @convention(block) (String) -> [String] = { [self] path in
             do {
                 let validPath = try validatePath(path)
@@ -344,18 +367,18 @@ public final class ScriptBridge: @unchecked Sendable {
             }
         }
 
-        // ios.fetch(url) → String
-        // 注意: JSContext 内では async が使えないため、セマフォベースの同期呼び出し
+        // ios.fetch(url) -> String. GET only, no headers, no domain restriction, and the
+        // whole body is returned as text. JavaScriptCore has no await, so the async call is
+        // made synchronous with a semaphore: this blocks the calling thread until the
+        // request finishes or the transport's own timeout fires.
         let fetch: @convention(block) (String) -> String = { [self] urlString in
             guard let url = URL(string: urlString) else {
                 return "[error] Invalid URL: \(urlString)"
             }
 
-            // nonisolated(unsafe) で Sendable 警告を回避（セマフォで同期するため安全）
+            // The semaphore is what makes this exclusive, so the unchecked capture is sound.
             nonisolated(unsafe) var resultText = "[error] Request failed"
             let semaphore = DispatchSemaphore(value: 0)
-            // transport を nonisolated(unsafe) でキャプチャ: ScriptBridge は @unchecked Sendable
-            // であり、HTTPTransport existential が Sendable でない場合も含めて安全に扱える
             nonisolated(unsafe) let transport = self.transport
             let timeout = self.httpTimeout
 
@@ -377,7 +400,7 @@ public final class ScriptBridge: @unchecked Sendable {
             return resultText
         }
 
-        // ios.log(message)
+        // ios.log(message). Same buffer as console.log, so output interleaves in call order.
         let log: @convention(block) (String) -> Void = { message in
             logBuffer.append(message)
         }
@@ -409,7 +432,10 @@ public final class ScriptBridge: @unchecked Sendable {
 
 // MARK: - LogBuffer
 
-/// スクリプト実行中のログを蓄積するバッファ
+/// Collects a script's log output, guarded by a lock because scripts can log from a
+/// bridged callback on another thread.
+///
+/// Unbounded: a script that logs in a loop grows this until the run ends.
 final class LogBuffer: @unchecked Sendable {
     private var logs: [String] = []
     private let lock = NSLock()
@@ -420,6 +446,7 @@ final class LogBuffer: @unchecked Sendable {
         lock.unlock()
     }
 
+    /// Returns everything logged so far and empties the buffer.
     func flush() -> [String] {
         lock.lock()
         let result = logs
@@ -437,7 +464,9 @@ private struct RunScriptInput: Codable {
 
 // MARK: - Errors
 
-/// ScriptToolKitのエラー
+/// Failures from ``ScriptToolKit``.
+///
+/// A JavaScript exception is not one of these — it comes back as a `ToolResult.error`.
 public enum ScriptToolKitError: Error, LocalizedError {
     case timeout(seconds: TimeInterval)
     case accessDenied(path: String)
@@ -454,3 +483,5 @@ public enum ScriptToolKitError: Error, LocalizedError {
         }
     }
 }
+
+#endif  // canImport(JavaScriptCore)

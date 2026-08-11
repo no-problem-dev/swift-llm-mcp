@@ -4,12 +4,10 @@ import LLMTool
 
 // MARK: - MCPServerWrapper
 
-/// MCPサーバーをToolSetBuilderで使用するためのラッパー
+/// Wraps a server so a `ToolSet` builder accepts it where a `Tool` is expected.
 ///
-/// MCP サーバーは ToolSet に直接追加でき、遅延接続・ツール取得を行う。
-/// これにより、宣言的な DSL で MCP サーバーを構成できる。
-///
-/// ## 使用例
+/// Needed only when the static type is `any MCPServerProtocol`; a concrete ``MCPServer``
+/// goes into the builder directly.
 ///
 /// ```swift
 /// let tools = ToolSet {
@@ -19,14 +17,13 @@ import LLMTool
 /// }
 /// ```
 public struct MCPServerWrapper: Sendable {
-    /// 内部のMCPサーバー
     let server: any MCPServerProtocol
 
     public init(_ server: any MCPServerProtocol) {
         self.server = server
     }
 
-    /// ツールを取得（必要に応じてMCPサーバーから取得）
+    /// Connects and returns the filtered tools. Nothing is cached, so each call reconnects.
     public func getTools() async throws -> [MCPTool] {
         try await server.getFilteredTools()
     }
@@ -35,17 +32,17 @@ public struct MCPServerWrapper: Sendable {
 // MARK: - ToolSetBuilder MCP Extensions
 
 extension ToolSetBuilder {
-    /// MCPServerProtocol準拠型を配列として構築
+    /// Accepts a server in a `ToolSet` builder, deferring the connection.
     ///
-    /// - Parameter server: MCPサーバー
-    /// - Returns: ラップされたMCPサーバーの配列
+    /// Building a `ToolSet` is synchronous but listing a server's tools is not, so the
+    /// server becomes a single ``MCPServerPlaceholder`` here. Call
+    /// `ToolSet.resolvingMCPServers()` before running an agent, or the model is offered
+    /// the placeholder instead of the real tools.
     public static func buildExpression(_ server: some MCPServerProtocol) -> [any Tool] {
-        // MCPサーバーは遅延評価が必要なため、プレースホルダーツールを返す
-        // 実際のツール取得は runAgent 実行時に行われる
         [MCPServerPlaceholder(server: server)]
     }
 
-    /// MCPServerWrapperを配列として構築
+    /// Accepts a wrapped server in a `ToolSet` builder, deferring the connection the same way.
     public static func buildExpression(_ wrapper: MCPServerWrapper) -> [any Tool] {
         [MCPServerPlaceholder(server: wrapper.server)]
     }
@@ -53,15 +50,14 @@ extension ToolSetBuilder {
 
 // MARK: - MCPServerPlaceholder
 
-/// MCPサーバーのプレースホルダーツール
+/// Stands in for a server's tools until `ToolSet.resolvingMCPServers()` replaces it.
 ///
-/// ToolSet 構築時に使用される一時的なプレースホルダー。
-/// 実際の MCP ツールは `resolvingMCPServers()` で取得される。
+/// It conforms to `Tool` only so it can sit in a `ToolSet`; calling it always throws.
+/// Seeing `__mcp_placeholder_*` in a model's tool list means resolution was skipped.
 public final class MCPServerPlaceholder: Tool, @unchecked Sendable {
-    /// ラップしているMCPサーバー
     public let server: any MCPServerProtocol
 
-    /// プレースホルダーであることを示すツール名
+    /// A reserved name, prefixed `__mcp_placeholder_`, that no real tool should collide with.
     public var toolName: String {
         "__mcp_placeholder_\(server.serverName)"
     }
@@ -78,12 +74,12 @@ public final class MCPServerPlaceholder: Tool, @unchecked Sendable {
         self.server = server
     }
 
-    /// プレースホルダーは直接実行できない
+    /// Always throws ``MCPError/placeholderCannotExecute(serverName:)``.
     public func execute(with argumentsData: Data) async throws -> ToolResult {
         throw MCPError.placeholderCannotExecute(serverName: server.serverName)
     }
 
-    /// MCPサーバーから実際のツールを取得
+    /// Connects to the server and returns the tools this placeholder stands for.
     public func resolveTools() async throws -> [MCPTool] {
         try await server.getFilteredTools()
     }
@@ -92,23 +88,22 @@ public final class MCPServerPlaceholder: Tool, @unchecked Sendable {
 // MARK: - ToolSet MCP Extensions
 
 extension ToolSet {
-    /// MCPサーバーのプレースホルダーを実際のツールに解決
+    /// Connects to every MCP server in this set and returns a set with real tools in place
+    /// of the placeholders.
     ///
-    /// ToolSet に含まれる MCP サーバープレースホルダーを、
-    /// 実際の MCP ツールに置き換えた新しい ToolSet を返す。
+    /// Call it once before handing the set to a model. Servers are contacted one after
+    /// another, in tool order, and the first failure aborts the whole thing — one
+    /// unreachable server means no resolved `ToolSet` at all.
     ///
-    /// - Returns: MCPツールが解決されたToolSet
-    /// - Throws: MCP接続エラーまたはツール取得エラー
+    /// - Throws: Whatever a server's transport reports while connecting or listing.
     public func resolvingMCPServers() async throws -> ToolSet {
         var resolvedTools: [any Tool] = []
 
         for tool in tools {
             if let placeholder = tool as? MCPServerPlaceholder {
-                // MCPサーバーから実際のツールを取得
                 let mcpTools = try await placeholder.resolveTools()
                 resolvedTools.append(contentsOf: mcpTools)
             } else {
-                // 通常のツールはそのまま追加
                 resolvedTools.append(tool)
             }
         }
@@ -116,12 +111,12 @@ extension ToolSet {
         return ToolSet(tools: resolvedTools)
     }
 
-    /// MCPサーバーのプレースホルダーが含まれているかどうか
+    /// Whether this set still needs ``resolvingMCPServers()``.
     public var containsMCPPlaceholders: Bool {
         tools.contains { $0 is MCPServerPlaceholder }
     }
 
-    /// MCPサーバーのプレースホルダー一覧を取得
+    /// The unresolved servers in this set, one entry per server.
     public var mcpPlaceholders: [MCPServerPlaceholder] {
         tools.compactMap { $0 as? MCPServerPlaceholder }
     }
@@ -129,21 +124,19 @@ extension ToolSet {
 
 // MARK: - MCPError
 
-/// MCPサーバー関連のエラー
+/// Failures raised by this package rather than by an MCP server itself.
+///
+/// Errors the server reports about a tool call arrive as `ToolResult.error`, not here.
 public enum MCPError: Error, LocalizedError {
-    /// プレースホルダーは直接実行できない
+    /// A placeholder was called directly, which means `ToolSet.resolvingMCPServers()` was never run.
     case placeholderCannotExecute(serverName: String)
 
-    /// サーバー接続エラー
     case connectionFailed(serverName: String, underlying: Error)
 
-    /// ツール取得エラー
     case toolFetchFailed(serverName: String, underlying: Error)
 
-    /// ツール実行エラー
     case toolExecutionFailed(toolName: String, underlying: Error)
 
-    /// ツールが見つからない
     case toolNotFound(toolName: String, serverName: String)
 
     public var errorDescription: String? {

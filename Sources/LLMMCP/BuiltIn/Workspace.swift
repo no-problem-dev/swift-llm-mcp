@@ -2,40 +2,36 @@ import Foundation
 
 // MARK: - Workspace
 
-/// セッションのワークスペース
+/// The area of the file system one agent session may work in.
 ///
-/// エージェントセッションに紐づく作業領域を表す。
-/// `workingDirectory` がツールの相対パス解決の基準となり、
-/// `rootDirectory` がワークスペース境界（ポリシー評価の基準）となる。
-///
-/// ## ディレクトリ構成例
+/// Two directories, doing two different jobs: `workingDirectory` is where relative paths
+/// resolve, and `rootDirectory` is the boundary a policy tests paths against. They are
+/// often the same directory, but they need not be.
 ///
 /// ```
-/// rootDirectory/           ← ワークスペース境界（この中は自由に読み書き可能）
-///   └── workingDirectory/  ← ツールの相対パス基準
+/// rootDirectory/           <- the boundary; file operations inside are allowed
+///   └── workingDirectory/  <- where relative paths resolve
 ///       ├── output/
 ///       └── data/
 /// ```
 public struct Workspace: Sendable, Identifiable, Equatable {
-    /// ワークスペース ID
+    /// Identifies the workspace. ``WorkspaceProvider`` sets it to the session id.
     public let id: UUID
 
-    /// 作業ディレクトリ（ツールの相対パス基準）
+    /// Where relative paths resolve.
     public let workingDirectory: String
 
-    /// ルートディレクトリ（ワークスペース境界）
-    ///
-    /// ポリシーはこのパス内のファイル操作を自動許可し、
-    /// 外部へのアクセスにはユーザー承認を要求する。
+    /// The boundary. A policy allows file operations under this path and asks the user
+    /// about anything outside it.
     public let rootDirectory: String
 
-    /// 追加の許可パス
+    /// Extra paths a policy allows despite being outside ``rootDirectory``.
     ///
-    /// ルートディレクトリ以外にもアクセスを許可するパス。
-    /// セッションストレージなど、ワークスペース外だがアクセスが必要なパスに使用。
+    /// For places a session genuinely needs but that do not belong inside its workspace,
+    /// such as shared session storage. Every entry widens the boundary, so keep the list short.
     public let additionalAllowedPaths: [String]
 
-    /// ワークスペースのソース
+    /// Whether this workspace was created automatically or named by the user.
     public let source: WorkspaceSource
 
     public init(
@@ -55,11 +51,11 @@ public struct Workspace: Sendable, Identifiable, Equatable {
 
 // MARK: - WorkspaceSource
 
-/// ワークスペースの作成元
+/// Where a workspace came from, which decides whether deleting it is safe.
 public enum WorkspaceSource: Sendable, Equatable {
-    /// システムが自動作成（Documents/sessions/<id> など）
+    /// Created by ``WorkspaceProvider`` under its base directory, and safe to delete with the session.
     case automatic
 
-    /// ユーザーが明示的に指定
+    /// A directory the user chose. It holds their own files, so it outlives the session.
     case userSpecified(path: String)
 }

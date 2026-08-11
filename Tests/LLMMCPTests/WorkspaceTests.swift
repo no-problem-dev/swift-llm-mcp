@@ -118,7 +118,7 @@ import Foundation
     #expect(workspace == nil)
 }
 
-/// 辞書にないワークスペースでもパスベースフォールバックで削除されることを検証
+/// A directory left by a previous process run has no in-memory entry, and must still be removable.
 @Test func testWorkspaceProviderRemoveFallbackByPath() async throws {
     let tempDir = FileManager.default.temporaryDirectory
         .appendingPathComponent("workspace-test-\(UUID().uuidString)")
@@ -126,22 +126,22 @@ import Foundation
 
     let sessionId = UUID()
 
-    // WorkspaceProvider を経由せず直接ディレクトリを作成（前回起動のセッションを模倣）
+    // Create the directory directly, imitating a session from an earlier process run.
     let rootDir = (tempDir.path as NSString).appendingPathComponent(sessionId.uuidString)
     try FileManager.default.createDirectory(atPath: rootDir, withIntermediateDirectories: true)
 
-    // ダミーファイルを配置
+    // Put something inside, so an empty-directory removal would not pass by accident.
     let dummyFile = (rootDir as NSString).appendingPathComponent("test.txt")
     FileManager.default.createFile(atPath: dummyFile, contents: Data("test".utf8))
     #expect(FileManager.default.fileExists(atPath: rootDir) == true)
 
-    // 新しい provider（辞書は空）で削除を試みる
+    // A fresh provider knows nothing about it.
     let provider = WorkspaceProvider(baseDirectory: tempDir.path)
     let retrieved = await provider.workspace(for: sessionId)
-    #expect(retrieved == nil) // 辞書にはない
+    #expect(retrieved == nil)  // Not in the map.
 
     await provider.removeWorkspace(for: sessionId)
 
-    // パスベースフォールバックでディレクトリが削除されること
+    // The path-based fallback must still delete it.
     #expect(FileManager.default.fileExists(atPath: rootDir) == false)
 }

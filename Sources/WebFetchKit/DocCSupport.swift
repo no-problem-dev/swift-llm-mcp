@@ -2,26 +2,30 @@ import Foundation
 
 // MARK: - DocCSupport
 
-/// Apple/Swift の DocC ドキュメントは HTML が JS 描画シェルで本文を持たないが、
-/// 同じ内容を render JSON API で配信している。DocC ページ URL を検出し、対応する
-/// JSON URL に変換する。
+/// Maps a DocC documentation page URL to the render JSON that actually contains its text.
+///
+/// Apple and Swift DocC sites serve an empty JavaScript shell as HTML, so fetching the page
+/// URL yields nothing readable; the same content is available as JSON at a parallel path.
 enum DocCSupport {
 
-    /// DocC ドキュメントページなら、その render JSON の URL を返す。DocC でなければ nil。
+    /// Returns the render JSON URL for a DocC page, or `nil` for any other URL.
+    ///
+    /// Only `developer.apple.com` and `docs.swift.org` are recognised — a DocC site hosted
+    /// anywhere else, including GitHub Pages, falls through to the ordinary HTML path.
     static func renderJSONURL(for url: URL) -> URL? {
         guard let host = url.host?.lowercased() else { return nil }
         let path = url.path
 
-        // developer.apple.com/documentation/... → /tutorials/data/documentation/....json
+        // developer.apple.com/documentation/... -> /tutorials/data/documentation/....json
         if host == "developer.apple.com" {
             guard path.hasPrefix("/documentation/") || path.hasPrefix("/tutorials/") else { return nil }
-            // すでに data JSON ならそのまま対象外（生 JSON は通常 fetch で扱う）
+            // A data JSON URL is already the raw form; leave it to the ordinary fetch path.
             if path.hasPrefix("/tutorials/data/") { return nil }
             let trimmed = trimSlash(path)
             return URL(string: "https://developer.apple.com/tutorials/data\(trimmed).json")
         }
 
-        // docs.swift.org/<bundle>/documentation/... → /<bundle>/data/documentation/....json
+        // docs.swift.org/<bundle>/documentation/... -> /<bundle>/data/documentation/....json
         if host == "docs.swift.org" {
             let comps = path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
             guard comps.count >= 2, comps[1] == "documentation" else { return nil }
@@ -43,11 +47,18 @@ enum DocCSupport {
 
 // MARK: - DocCRenderer
 
-/// DocC render JSON を読みやすい Markdown に変換する。
+/// Converts DocC render JSON into readable Markdown.
 enum DocCRenderer {
 
-    /// render JSON データを Markdown 化する。失敗・空なら nil。
-    /// - Parameter host: 参照 URL を絶対化するためのホスト（例: developer.apple.com）
+    /// Renders the JSON, or returns `nil` when it will not parse or produces no text.
+    ///
+    /// Covers the abstract, the declaration, the content blocks and the topic list. Node
+    /// types outside that set — `mentions`, `seeAlsoSections`, relationships — are dropped
+    /// silently, so the Markdown is a readable subset rather than a faithful transcription.
+    ///
+    /// - Parameters:
+    ///   - jsonData: A DocC render JSON document.
+    ///   - host: Host used to turn the document's relative reference URLs absolute.
     static func render(jsonData: Data, host: String) -> (title: String?, markdown: String)? {
         guard let root = (try? JSONSerialization.jsonObject(with: jsonData)) as? [String: Any] else {
             return nil
@@ -55,7 +66,7 @@ enum DocCRenderer {
         let refs = root["references"] as? [String: Any] ?? [:]
         var lines: [String] = []
 
-        // タイトル + 種別
+        // Title and role heading ("Instance Method", "Structure", ...).
         let metadata = root["metadata"] as? [String: Any]
         let title = metadata?["title"] as? String
         if let title { lines.append("# \(title)") }
@@ -63,13 +74,13 @@ enum DocCRenderer {
             lines.append("*\(role)*")
         }
 
-        // abstract（概要）
+        // Abstract: the one-line summary.
         if let abstract = root["abstract"] as? [[String: Any]] {
             let text = renderInline(abstract, refs: refs, host: host)
             if !text.isEmpty { lines.append("\n\(text)") }
         }
 
-        // primaryContentSections（宣言 + 本文）
+        // Primary content: the declaration and the discussion.
         if let sections = root["primaryContentSections"] as? [[String: Any]] {
             for section in sections {
                 switch section["kind"] as? String {
@@ -89,12 +100,12 @@ enum DocCRenderer {
                         lines.append(contentsOf: renderBlocks(content, refs: refs, host: host))
                     }
                 default:
-                    break  // mentions 等はスキップ
+                    break  // Skip section kinds such as "mentions".
                 }
             }
         }
 
-        // topicSections（子トピックへのリンク一覧）
+        // Topic sections: the links to child symbols.
         if let topics = root["topicSections"] as? [[String: Any]], !topics.isEmpty {
             lines.append("\n## Topics")
             for topic in topics {

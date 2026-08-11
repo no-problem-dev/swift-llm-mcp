@@ -4,25 +4,20 @@ import LLMTool
 
 // MARK: - ToolKit Protocol
 
-/// 関連するツールをグループ化するプロトコル
+/// A group of related tools implemented in Swift rather than behind an MCP server.
 ///
-/// ToolKit は複数の関連ツールを束ねて提供する。
-/// 公式 MCP サーバー（Memory、Filesystem 等）と同等の機能を
-/// Swift 内で直接実装するために使う。
-///
-/// ## 使用例
+/// Use one when you would otherwise run an official MCP server (filesystem, memory, fetch)
+/// as a subprocess: the tools run in-process, so there is no process to launch, no JSON-RPC
+/// round trip, and no separate sandbox — a ToolKit has whatever access this process has.
 ///
 /// ```swift
 /// let tools = ToolSet {
-///     // 外部MCPサーバー
 ///     MCPServer(command: "npx", arguments: ["-y", "@anthropic/mcp-server-brave"])
-///
-///     // 内蔵ToolKit
 ///     FileSystemToolKit(allowedPaths: ["/tmp"])
 /// }
 /// ```
 ///
-/// ## 実装例
+/// Conforming takes two properties:
 ///
 /// ```swift
 /// public struct MyToolKit: ToolKit {
@@ -34,34 +29,30 @@ import LLMTool
 /// }
 /// ```
 public protocol ToolKit: Sendable {
-    /// ToolKit の識別名
-    ///
-    /// ログやデバッグ時の識別に使う。
+    /// Identifies the kit in logs. Never shown to the model, and not required to be unique.
     var name: String { get }
 
-    /// この ToolKit が提供するツールの配列
+    /// The tools this kit contributes. Every one of them reaches the model.
     ///
-    /// ToolSet に追加される際、この配列のすべてのツールが含まれる。
+    /// Read each time it is used, so a computed implementation must be cheap and must
+    /// return a stable list — tools that come and go between reads will confuse the model.
     var tools: [any Tool] { get }
 }
 
 // MARK: - ToolKit Default Extensions
 
 extension ToolKit {
-    /// ツール数
     public var toolCount: Int {
         tools.count
     }
 
-    /// ツール名のリスト
     public var toolNames: [String] {
         tools.map { $0.toolName }
     }
 
-    /// 名前でツールを検索
+    /// Finds a tool by name, returning the first match if the kit has duplicates.
     ///
-    /// - Parameter name: ツール名
-    /// - Returns: 見つかったツール、またはnil
+    /// - Parameter name: Exact tool name; the comparison is case-sensitive.
     public func tool(named name: String) -> (any Tool)? {
         tools.first { $0.toolName == name }
     }
@@ -69,10 +60,10 @@ extension ToolKit {
 
 // MARK: - BuiltInTool
 
-/// 内蔵 ToolKit 用のツール
+/// A tool implemented as a closure, for use inside a ``ToolKit``.
 ///
-/// ToolKit が提供する各ツールの共通機能を持つ。
-/// アノテーション情報を保持し、MCPToolCapabilities への変換をサポートする。
+/// It carries MCP tool annotations so an in-process tool can be filtered by the same
+/// ``MCPToolSelection`` presets as a remote one.
 public struct BuiltInTool: Tool, Sendable {
     // MARK: - Properties
 
@@ -85,14 +76,15 @@ public struct BuiltInTool: Tool, Sendable {
 
     // MARK: - Initialization
 
-    /// BuiltInToolを作成
+    /// Creates a tool.
     ///
     /// - Parameters:
-    ///   - name: ツール名
-    ///   - description: ツールの説明
-    ///   - inputSchema: 入力スキーマ
-    ///   - annotations: ツールアノテーション
-    ///   - handler: 実行ハンドラー
+    ///   - name: Tool name the model calls.
+    ///   - description: What the model reads when deciding whether to call it.
+    ///   - inputSchema: Argument schema. The handler still has to validate; nothing here enforces it.
+    ///   - annotations: Capability hints. Leaving them empty classifies the tool as
+    ///     destructive — see ``capabilities``.
+    ///   - handler: Performs the call, receiving raw JSON argument data.
     public init(
         name: String,
         description: String,
@@ -115,12 +107,12 @@ public struct BuiltInTool: Tool, Sendable {
 
     // MARK: - Capabilities Conversion
 
-    /// MCPToolCapabilitiesに変換
+    /// This tool's classification, derived from its annotations.
     ///
-    /// MCP仕様に従い、以下のルールで変換する：
-    /// - `isReadOnly`: `readOnlyHint`の値（デフォルト: false）
-    /// - `isDangerous`: `readOnlyHint`がtrueの場合はfalse、
-    ///                  それ以外は`destructiveHint`の値（デフォルト: true）
+    /// Unannotated defaults to ``MCPToolCapabilities/writeDestructive``, so a tool that
+    /// declares nothing is excluded by the `.safe` and `.readOnly` presets. That is the
+    /// opposite of ``MCPTool``, whose unannotated default is `writeSafe` — an in-process
+    /// tool is assumed dangerous until it says otherwise.
     public var capabilities: MCPToolCapabilities {
         let isReadOnly = annotations.readOnlyHint ?? false
         let isDangerous = isReadOnly ? false : (annotations.destructiveHint ?? true)

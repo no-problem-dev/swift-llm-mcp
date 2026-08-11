@@ -7,37 +7,38 @@ import LLMTool
 
 // MARK: - WebSearchProvider Protocol
 
-/// Web検索プロバイダーのプロトコル
+/// A search backend, so the search engine can be swapped without touching the tool.
 ///
-/// 異なる検索エンジンバックエンドを差し替え可能にするための抽象化。
-///
-/// ## 使用例
+/// Conformances compose: ``ResilientSearchProvider`` and ``FallbackSearchProvider`` are
+/// themselves providers that wrap other providers.
 ///
 /// ```swift
 /// let provider = BraveSearchProvider(apiKey: "YOUR_API_KEY")
 /// let results = try await provider.search(query: "Swift concurrency", maxResults: 5)
 /// ```
 public protocol WebSearchProvider: Sendable {
-    /// 検索を実行
+    /// Runs one search.
+    ///
+    /// Returning an empty array is not an error at this level, but the wrappers treat it as
+    /// one: ``FallbackSearchProvider`` moves on to the next provider when a search comes
+    /// back empty.
     ///
     /// - Parameters:
-    ///   - query: 検索クエリ
-    ///   - maxResults: 最大結果数
-    /// - Returns: 検索結果の配列
+    ///   - query: The query, passed to the backend as given.
+    ///   - maxResults: Upper bound on results. A backend may return fewer.
     func search(query: String, maxResults: Int) async throws -> [WebSearchResult]
 }
 
 // MARK: - WebSearchResult
 
-/// Web検索の結果
+/// One hit from a web search.
 public struct WebSearchResult: Codable, Sendable {
-    /// ページタイトル
     public let title: String
 
-    /// ページURL
+    /// The result URL as a string. Not validated, so a malformed one reaches the model unchanged.
     public let url: String
 
-    /// 検索結果のスニペット
+    /// The search engine's excerpt. Empty when the engine supplied none.
     public let snippet: String
 
     public init(title: String, url: String, snippet: String) {
@@ -49,13 +50,15 @@ public struct WebSearchResult: Codable, Sendable {
 
 // MARK: - UnconfiguredSearchProvider
 
-/// APIキー未設定時のフォールバックプロバイダー
+/// The provider used when no API key was supplied. Every search throws.
 ///
-/// 検索実行時に設定方法を案内するエラーを返す。
-/// ビルドは通るが、実行時にユーザーに設定を促す。
+/// It exists so that leaving search unconfigured is a run-time error with instructions in
+/// it, rather than a compile error or a silently empty result list.
 public struct UnconfiguredSearchProvider: WebSearchProvider {
     public init() {}
 
+    /// Always throws ``WebSearchError/providerNotConfigured``, whose message names the
+    /// factory methods that configure a real backend.
     public func search(query: String, maxResults: Int) async throws -> [WebSearchResult] {
         throw WebSearchError.providerNotConfigured
     }
@@ -63,25 +66,23 @@ public struct UnconfiguredSearchProvider: WebSearchProvider {
 
 // MARK: - WebSearchToolKit
 
-/// Web検索ツールを提供するToolKit
+/// Gives the model one tool, `web_search`, backed by Brave or Serper.
 ///
-/// Web 検索を実行し、タイトル・URL・スニペットの一覧を返す。
-/// Brave Search API または Serper API をバックエンドとして使用する。
-///
-/// ## 使用例
+/// The factory methods wrap the backend in a ``ResilientSearchProvider`` by default, so
+/// caching, rate limiting, a circuit breaker and one retry are on unless you pass
+/// `resilience: nil`. Constructing the kit directly gives you none of that.
 ///
 /// ```swift
-/// // Brave Search API
 /// let tools = ToolSet {
 ///     WebSearchToolKit.brave(apiKey: "BRAVE_KEY")
 /// }
 ///
-/// // Serper API（日本語最適化）
+/// // Serper, tuned for Japanese results
 /// let tools = ToolSet {
 ///     WebSearchToolKit.serper(apiKey: "SERPER_KEY", gl: "jp", hl: "ja")
 /// }
 ///
-/// // フォールバックチェーン
+/// // Fall back to a second engine when the first fails or returns nothing
 /// let tools = ToolSet {
 ///     WebSearchToolKit.withFallback(
 ///         primary: BraveSearchProvider(apiKey: "BRAVE_KEY"),
@@ -89,37 +90,35 @@ public struct UnconfiguredSearchProvider: WebSearchProvider {
 ///     )
 /// }
 /// ```
-///
-/// ## 提供されるツール
-///
-/// - `web_search`: クエリでWeb検索を実行し、結果一覧を返す
 public final class WebSearchToolKit: ToolKit, @unchecked Sendable {
     // MARK: - Properties
 
     public let name: String = "web_search"
 
-    /// 検索プロバイダー
     private let provider: any WebSearchProvider
 
     // MARK: - Initialization
 
-    /// WebSearchToolKitを作成
+    /// Creates a kit around a provider you built yourself, adding no resilience of its own.
     ///
-    /// - Parameter provider: 検索プロバイダー（デフォルト: UnconfiguredSearchProvider）
+    /// - Parameter provider: The backend. Passing `nil` installs
+    ///   ``UnconfiguredSearchProvider``, so the tool exists but every call fails with
+    ///   configuration instructions.
     public init(provider: (any WebSearchProvider)? = nil) {
         self.provider = provider ?? UnconfiguredSearchProvider()
     }
 
     // MARK: - Factory Methods
 
-    /// Brave Search APIプロバイダーでWebSearchToolKitを作成
+    /// A kit backed by Brave Search, wrapped in resilience unless you opt out.
     ///
     /// - Parameters:
-    ///   - apiKey: Brave Search APIキー
-    ///   - searchLang: 検索言語（例: "ja"）
-    ///   - country: 国コード（例: "JP"）
-    ///   - resilience: レジリエンス設定（nil でレジリエンスなし）
-    /// - Returns: 設定済みのWebSearchToolKit
+    ///   - apiKey: Brave Search API key. Not validated here; a bad key surfaces as an
+    ///     HTTP error on the first search.
+    ///   - searchLang: Search language, such as `"ja"`.
+    ///   - country: Country code, such as `"JP"`.
+    ///   - resilience: Cache, rate limit, circuit breaker and retry settings.
+    ///     Pass `nil` to call Brave directly with none of them.
     public static func brave(
         apiKey: String,
         searchLang: String? = nil,
@@ -133,14 +132,14 @@ public final class WebSearchToolKit: ToolKit, @unchecked Sendable {
         return WebSearchToolKit(provider: base)
     }
 
-    /// Serper APIプロバイダーでWebSearchToolKitを作成
+    /// A kit backed by Serper, wrapped in resilience unless you opt out.
     ///
     /// - Parameters:
-    ///   - apiKey: Serper APIキー
-    ///   - gl: 地域コード（例: "jp"）
-    ///   - hl: 言語コード（例: "ja"）
-    ///   - resilience: レジリエンス設定（nil でレジリエンスなし）
-    /// - Returns: 設定済みのWebSearchToolKit
+    ///   - apiKey: Serper API key.
+    ///   - gl: Region code, such as `"jp"`.
+    ///   - hl: Interface language code, such as `"ja"`.
+    ///   - resilience: Cache, rate limit, circuit breaker and retry settings.
+    ///     Pass `nil` to call Serper directly with none of them.
     public static func serper(
         apiKey: String,
         gl: String? = nil,
@@ -154,13 +153,15 @@ public final class WebSearchToolKit: ToolKit, @unchecked Sendable {
         return WebSearchToolKit(provider: base)
     }
 
-    /// フォールバックチェーン付きWebSearchToolKitを作成
+    /// A kit that tries a second engine when the first fails or returns nothing.
+    ///
+    /// Each provider gets its own resilience wrapper, so they have separate caches and
+    /// separate circuit breakers — the primary tripping does not affect the fallback.
     ///
     /// - Parameters:
-    ///   - primary: プライマリプロバイダー
-    ///   - fallback: フォールバックプロバイダー
-    ///   - resilience: 各プロバイダーに適用するレジリエンス設定（nil でレジリエンスなし）
-    /// - Returns: 設定済みのWebSearchToolKit
+    ///   - primary: Tried first.
+    ///   - fallback: Tried when the primary throws or returns an empty list.
+    ///   - resilience: Applied to each provider individually. Pass `nil` for neither.
     public static func withFallback(
         primary: any WebSearchProvider,
         fallback: any WebSearchProvider,
@@ -188,7 +189,11 @@ public final class WebSearchToolKit: ToolKit, @unchecked Sendable {
 
     // MARK: - Tool Definitions
 
-    /// web_search ツール
+    /// The `web_search` tool.
+    ///
+    /// `max_results` is clamped to 1...10 rather than rejected, so an out-of-range value
+    /// from the model is quietly corrected. A missing `query` fails decoding and the error
+    /// reaches the model as a tool failure.
     private var webSearchTool: BuiltInTool {
         BuiltInTool(
             name: "web_search",
@@ -250,7 +255,10 @@ private struct WebSearchOutput: Codable {
 
 // MARK: - Errors
 
-/// WebSearchToolKitのエラー
+/// Failures from ``WebSearchToolKit`` and the providers behind it.
+///
+/// Each `errorDescription` tells the model what to do next, because these strings are read
+/// by an agent deciding on its next move rather than by a person reading a log.
 public enum WebSearchError: Error, LocalizedError {
     case invalidQuery(String)
     case invalidResponse

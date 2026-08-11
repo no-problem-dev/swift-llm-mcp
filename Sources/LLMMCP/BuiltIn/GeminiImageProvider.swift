@@ -7,10 +7,11 @@ import LLMClient
 
 // MARK: - GeminiImageProvider
 
-/// Google Imagen 4 を使用した画像生成プロバイダー
+/// Generates images with Google's Imagen 4.
 ///
-/// Gemini API キーが必要。
-/// `POST https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict` を直接呼び出す。
+/// Requests are sent with `personGeneration: "allow_all"`, so images of people are not
+/// blocked at the request level — Google's own safety filters still apply. Calls
+/// `POST .../v1beta/models/imagen-4.0-generate-001:predict` directly rather than through an SDK.
 public final class GeminiImageProvider: ImageGenerationProvider, @unchecked Sendable {
     // MARK: - Properties
 
@@ -20,12 +21,13 @@ public final class GeminiImageProvider: ImageGenerationProvider, @unchecked Send
 
     // MARK: - Initialization
 
-    /// GeminiImageProvider を作成
+    /// Creates a provider, building a `URLSession`-backed transport unless one is supplied.
     ///
     /// - Parameters:
-    ///   - apiKey: Gemini API キー
-    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 60）
-    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
+    ///   - apiKey: Gemini API key, sent as `x-goog-api-key`. It must be an API key, which
+    ///     starts with `AIza`; an OAuth token is rejected by the endpoint.
+    ///   - timeout: Per-request timeout in seconds. Generation routinely takes tens of seconds.
+    ///   - transport: Substitute one in tests to avoid real network calls.
     public init(apiKey: String, timeout: TimeInterval = 60, transport: (any HTTPTransport)? = nil) {
         self.apiKey = apiKey
         self.timeout = timeout
@@ -41,13 +43,20 @@ public final class GeminiImageProvider: ImageGenerationProvider, @unchecked Send
 
     // MARK: - ImageGenerationProvider
 
-    /// 画像を生成
+    /// Generates one image.
+    ///
+    /// Sizes become aspect ratios — 1:1, 16:9 and 9:16 — so the pixel dimensions are
+    /// Google's choice, not this package's. Only the first prediction is used, and the image
+    /// arrives base64-encoded in the body.
     ///
     /// - Parameters:
-    ///   - prompt: 画像生成プロンプト
-    ///   - size: 画像サイズ（square / landscape / portrait）
-    ///   - quality: 画像品質（standard / hd）
-    /// - Returns: 生成された画像データ
+    ///   - prompt: Description of the image. Imagen does not report prompt rewrites, so
+    ///     ``GeneratedImageData/revisedPrompt`` is always `nil` here.
+    ///   - size: Mapped to an aspect ratio.
+    ///   - quality: Ignored. Imagen 4 exposes no quality tier through this endpoint.
+    /// - Throws: ``ImageGenerationToolError/contentPolicyViolation`` when a 400 body mentions
+    ///   safety or policy — a substring check, so an unusually worded rejection is reported
+    ///   as a plain ``ImageGenerationToolError/httpError(statusCode:)`` instead.
     /// - Throws: ``ImageGenerationToolError``
     public func generateImage(prompt: String, size: ImageGenerationSize, quality: ImageGenerationQuality) async throws -> GeneratedImageData {
         let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict")!

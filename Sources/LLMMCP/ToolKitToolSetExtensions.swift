@@ -4,20 +4,17 @@ import LLMTool
 // MARK: - ToolSetBuilder Extension for ToolKit
 
 extension ToolSetBuilder {
-    /// ToolKitを配列として構築
+    /// Accepts a ``ToolKit`` in a `ToolSet` builder, flattening it into its tools.
     ///
-    /// ToolSetBuilder 内で ToolKit を直接使用できるようにする。
-    /// ToolKit が提供するすべてのツールが ToolSet に追加される。
+    /// Unlike an MCP server this needs no resolution step — the tools are available
+    /// immediately, so a kit and a plain tool can be mixed freely.
     ///
     /// ```swift
     /// let tools = ToolSet {
-    ///     WebToolKit()         // ToolKitのすべてのツールが追加される
-    ///     GetWeatherTool()     // 通常のToolも混在可能
+    ///     WebToolKit()
+    ///     GetWeatherTool()
     /// }
     /// ```
-    ///
-    /// - Parameter toolkit: ToolKitに準拠したインスタンス
-    /// - Returns: ToolKitが提供するツールの配列
     public static func buildExpression(_ toolkit: some ToolKit) -> [any Tool] {
         toolkit.tools
     }
@@ -26,31 +23,21 @@ extension ToolSetBuilder {
 // MARK: - ToolSet Extension for ToolKit
 
 extension ToolSet {
-    /// ToolKitを追加した新しいToolSetを返す
-    ///
-    /// - Parameter toolkit: 追加するToolKit
-    /// - Returns: ToolKitのツールが追加されたToolSet
+    /// A copy of this set with a kit's tools appended. Duplicate tool names are not detected.
     public func appending(_ toolkit: some ToolKit) -> ToolSet {
         ToolSet(tools: self.tools + toolkit.tools)
     }
 
-    /// ToolSetにToolKitを追加
-    ///
-    /// - Parameters:
-    ///   - lhs: ToolSet
-    ///   - rhs: 追加するToolKit
-    /// - Returns: ToolKitのツールが追加されたToolSet
+    /// Operator form of ``appending(_:)``.
     public static func + (lhs: ToolSet, rhs: some ToolKit) -> ToolSet {
         ToolSet(tools: lhs.tools + rhs.tools)
     }
 
-    /// このToolSetに含まれるToolKitのツール数を取得
+    /// Always returns 0.
     ///
-    /// - Parameter toolkitName: ToolKit名
-    /// - Returns: 該当するToolKitのツール数（ToolKit情報がない場合は0）
+    /// A `ToolSet` stores tools flattened and keeps no record of which kit contributed
+    /// each one, so the name cannot be matched against anything.
     public func toolCount(for toolkitName: String) -> Int {
-        // Note: 現在の実装ではToolKitの追跡は行わないため、
-        // この機能は将来の拡張用に予約されている
         0
     }
 }
@@ -58,10 +45,7 @@ extension ToolSet {
 // MARK: - Array Extension for ToolKit
 
 extension Array where Element == any Tool {
-    /// ToolKitからツール配列を作成
-    ///
-    /// - Parameter toolkit: ToolKit
-    /// - Returns: ツール配列
+    /// Builds a plain array from a kit's tools, discarding the kit itself.
     public init(_ toolkit: some ToolKit) {
         self = toolkit.tools
     }

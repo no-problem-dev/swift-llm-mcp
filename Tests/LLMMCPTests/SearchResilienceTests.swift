@@ -3,7 +3,7 @@ import Testing
 
 // MARK: - MockSearchProvider
 
-/// テスト用のモック検索プロバイダー
+/// Stub provider: replays a scripted sequence of outcomes and counts how many times it was called.
 final class MockSearchProvider: WebSearchProvider, @unchecked Sendable {
     enum Behavior: Sendable {
         case success([WebSearchResult])

@@ -1,56 +1,87 @@
 # ``LLMMCP``
 
-MCP サーバー接続・内蔵 ToolKit・`ToolKit`/`BuiltInTool` アダプタを提供する Swift パッケージ。
+Turn built-in capabilities and remote MCP servers into one flat list of tools an agent can call.
 
 ## Overview
 
-`LLMMCP` は、`swift-llm-client` の `ToolSet` に外部ケイパビリティを解決して組み込むためのツール解決レイヤー。外部 MCP サーバーへの接続と、MCP サーバー不要の内蔵 ToolKit の両方を提供する。
+An agent's tool list is the only thing it can act through, and it comes from two places: tools
+implemented here in Swift, and tools advertised by an MCP server somewhere else. `LLMMCP`
+resolves both into the same `ToolSet`, so a model cannot tell which capability came from where.
 
-`swift-llm-mcp` パッケージは `LLMMCP` と `WebFetchKit` の 2 ライブラリで構成される。
-`WebFetchKit` は MCP・LLMTool に依存しない純粋な Web フェッチ／HTML 抽出エンジンで、
-`LLMMCP` の `WebToolKit` はその上に構築された LLM ツールアダプタ。
-Web フェッチ能力を別のコンテキスト（CLI ツール、テスト、非 MCP エージェントなど）で
-直接使いたい場合は `import WebFetchKit` で `WebFetchEngine` を単独利用できる。
+The two sources behave differently in ways that matter when you wire them up.
+
+A ``ToolKit`` runs in this process. Its tools are available the instant the `ToolSet` is built,
+there is no handshake to fail, and there is no separate sandbox — a kit has whatever access the
+host process has. What bounds it is the argument you pass: `allowedPaths` for
+``FileSystemToolKit``, `allowedDomains` for ``WebToolKit``. Omit them and there is no boundary.
+
+An ``MCPServer`` runs elsewhere. Listing its tools needs a connection, and building a `ToolSet` is
+synchronous, so a server enters the set as a single ``MCPServerPlaceholder`` and is expanded later
+by `ToolSet.resolvingMCPServers()`. **Skip that call and the model is offered the placeholder
+instead of the tools** — a placeholder throws if called, so the failure is loud rather than silent.
+Connections are not pooled: every listing and every tool call opens a new one, which for a stdio
+server means a fresh subprocess each time.
 
 ```swift
 import LLMMCP
 import LLMTool
 
-// 外部 MCP サーバーと内蔵 ToolKit を組み合わせる
 let tools = ToolSet {
-    // 外部 MCP サーバー（macOS のみ）
     MCPServer(
         command: "npx",
         arguments: ["-y", "@anthropic/mcp-server-filesystem", "/path/to/dir"]
     ).readOnly
 
-    // 内蔵 ToolKit（MCP サーバー不要）
     WebToolKit()
     FileSystemToolKit(allowedPaths: ["/tmp/workspace"])
     UtilityToolKit()
 }
 
-// MCP サーバープレースホルダーを実際のツールに解決
+// Required whenever the set contains a server. No-op otherwise.
 let resolved = try await tools.resolvingMCPServers()
 ```
 
+### Restricting what a server may do
+
+``MCPToolSelection`` filters a server's tool list before the model sees it. `.readOnly` and
+`.safe` read the server's own `readOnlyHint` and `destructiveHint` annotations, which are hints —
+a server that sends neither is treated as writable and non-destructive, so it survives `.safe`.
+When that matters, name the tools with `.including(_:)` rather than relying on a preset.
+
+The filter decides what is offered, not what is possible. It is not a sandbox.
+
+### The fetch engine underneath
+
+``WebToolKit`` is a thin adapter over `WebFetchKit`'s engine, which has no MCP or tool-calling
+dependency of its own. To fetch pages from a CLI, a test, or an agent that is not using this
+package, `import WebFetchKit` and use `WebFetchEngine` directly.
+
 ## Topics
 
-### 基本
+### Getting started
 
 - <doc:GettingStarted>
 
-### MCP サーバー接続
+### Connecting to an MCP server
 
 - ``MCPServer``
 - ``MCPServerProtocol``
 - ``MCPConfiguration``
 - ``MCPTransport``
 - ``MCPAuthorization``
+
+### Choosing which tools reach the model
+
 - ``MCPToolSelection``
 - ``MCPToolCapabilities``
 
-### 内蔵 ToolKit
+### Resolving servers into tools
+
+- ``MCPServerPlaceholder``
+- ``MCPServerWrapper``
+- ``MCPTool``
+
+### Tools that run in this process
 
 - ``ToolKit``
 - ``BuiltInTool``
@@ -58,11 +89,49 @@ let resolved = try await tools.resolvingMCPServers()
 - ``FileSystemToolKit``
 - ``ScriptToolKit``
 - ``ScriptBridge``
-- ``WebSearchToolKit``
-- ``ImageGenerationToolKit``
 - ``UtilityToolKit``
 
-### エラー型
+### Searching the web
 
-- ``ScriptToolKitError``
+- ``WebSearchToolKit``
+- ``WebSearchProvider``
+- ``WebSearchResult``
+- ``BraveSearchProvider``
+- ``SerperSearchProvider``
+- ``FallbackSearchProvider``
+- ``UnconfiguredSearchProvider``
+
+### Rate limiting, retries and caching
+
+- ``ResilientSearchProvider``
+- ``SearchResilienceConfiguration``
+- ``RateLimiter``
+- ``CircuitBreaker``
+- ``SearchResultCache``
+
+### Generating images
+
+- ``ImageGenerationToolKit``
+- ``ImageGenerationProvider``
+- ``ImageGenerationSize``
+- ``ImageGenerationQuality``
+- ``GeneratedImageData``
+- ``OpenAIImageProvider``
+- ``GeminiImageProvider``
+- ``FalAIImageProvider``
+- ``UnconfiguredImageGenerationProvider``
+
+### Confining a session to a directory
+
+- ``Workspace``
+- ``WorkspaceSource``
+- ``WorkspaceProvider``
+
+### Errors
+
+- ``MCPError``
 - ``FileSystemToolKitError``
+- ``ScriptToolKitError``
+- ``WebSearchError``
+- ``ImageGenerationToolError``
+- ``UtilityToolKitError``

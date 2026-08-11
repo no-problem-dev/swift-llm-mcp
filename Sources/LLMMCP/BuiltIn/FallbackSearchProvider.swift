@@ -2,12 +2,12 @@ import Foundation
 
 // MARK: - FallbackSearchProvider
 
-/// 複数プロバイダーの自動フォールバックチェーン
+/// Tries several search backends in order and returns the first non-empty result.
 ///
-/// プロバイダーを順番に試行し、最初に成功した結果を返す。
-/// 空結果も失敗として扱い、次のプロバイダーに進む。
-///
-/// ## 使用例
+/// An empty result counts as a failure, not as "nothing matched", so a provider that
+/// legitimately finds nothing hands the query on to the next one. That is what makes this
+/// useful across engines with different coverage, and also why it costs one request per
+/// provider on a query nothing matches.
 ///
 /// ```swift
 /// let provider = FallbackSearchProvider(providers: [
@@ -23,15 +23,24 @@ public final class FallbackSearchProvider: WebSearchProvider, @unchecked Sendabl
 
     // MARK: - Initialization
 
-    /// FallbackSearchProviderを作成
+    /// Creates a chain.
     ///
-    /// - Parameter providers: 試行順のプロバイダー配列
+    /// - Parameter providers: Tried in array order. An empty array makes every search throw
+    ///   ``WebSearchError/allProvidersFailed(_:)`` with no underlying errors.
     public init(providers: [any WebSearchProvider]) {
         self.providers = providers
     }
 
     // MARK: - WebSearchProvider
 
+    /// Returns the first non-empty result, trying each provider in turn.
+    ///
+    /// Providers are tried sequentially, so the worst case is the sum of every provider's
+    /// latency and there is no overall deadline.
+    ///
+    /// - Throws: ``WebSearchError/allProvidersFailed(_:)``, carrying one error per provider
+    ///   in the order they were tried. A provider that returned an empty list contributes
+    ///   ``WebSearchError/noResults``.
     public func search(query: String, maxResults: Int) async throws -> [WebSearchResult] {
         var errors: [Error] = []
 
@@ -41,7 +50,7 @@ public final class FallbackSearchProvider: WebSearchProvider, @unchecked Sendabl
                 if !results.isEmpty {
                     return results
                 }
-                // Empty results — try next provider
+                // Empty is treated as failure so the next engine gets a chance.
                 errors.append(WebSearchError.noResults)
             } catch {
                 errors.append(error)

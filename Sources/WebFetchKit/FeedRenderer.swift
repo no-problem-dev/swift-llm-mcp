@@ -3,18 +3,25 @@ import SwiftSoup
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
+#if canImport(FoundationXML)
+// On Linux the XML parser ships as a module of its own rather than as part of
+// Foundation, so `XMLParser` and `XMLParserDelegate` are only in scope once this
+// is imported.
+import FoundationXML
+#endif
 
 // MARK: - FeedSupport
 
-/// RSS/Atom フィードの検出。
+/// Recognises RSS, Atom and RDF feeds.
 enum FeedSupport {
+    /// Reports a feed from the Content-Type, or from a root element found in the first 1 KB.
     static func isFeed(contentType: String?, content: String) -> Bool {
         if let ct = contentType?.lowercased() {
             if ct.contains("application/rss+xml") || ct.contains("application/atom+xml") {
                 return true
             }
         }
-        // 先頭付近に <rss / <feed があれば feed とみなす（XML 宣言は無視）
+        // Sniff the root element, skipping past any XML declaration and doctype.
         let head = content.prefix(1024).lowercased()
         return head.contains("<rss") || head.contains("<feed") || head.contains("<rdf:rdf")
     }
@@ -22,9 +29,18 @@ enum FeedSupport {
 
 // MARK: - FeedRenderer
 
-/// RSS/Atom XML を item 一覧の Markdown に整形する（生 XML の冗長トークンを削減）。
+/// Reshapes RSS and Atom XML into a Markdown item list, which costs far fewer tokens than the raw XML.
 enum FeedRenderer {
 
+    /// Renders a feed, or returns `nil` when the XML will not parse or holds no items.
+    ///
+    /// Returning `nil` is how a caller learns to fall back to another representation.
+    /// Items past `maxItems` are dropped without a marker, and each item's summary is cut
+    /// to 500 characters, so the output is a preview rather than the full feed.
+    ///
+    /// - Parameters:
+    ///   - content: The feed XML. It must be UTF-8-encodable.
+    ///   - maxItems: How many items to render.
     static func render(xml content: String, maxItems: Int = 50) -> (title: String?, markdown: String)? {
         guard let data = content.data(using: .utf8) else { return nil }
         let parser = XMLParser(data: data)
@@ -52,7 +68,7 @@ enum FeedRenderer {
         return (delegate.feedTitle?.trimmed, markdown)
     }
 
-    /// description/summary に含まれる HTML を素のテキストに落とし、長すぎる場合は切り詰める。
+    /// Flattens the HTML inside a description or summary to plain text and cuts it at `limit` characters.
     private static func plainText(_ html: String, limit: Int = 500) -> String {
         let text = (try? SwiftSoup.parse(html).text()) ?? html
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -89,7 +105,7 @@ private final class FeedParserDelegate: NSObject, XMLParserDelegate {
             inItem = true
             current = Item()
         }
-        // Atom の <link href="..."> は属性にURLがある
+        // Atom puts the URL in an attribute: <link href="...">, with no character content.
         if name == "link", inItem, current.link == nil, let href = attributes["href"], !href.isEmpty {
             current.link = href
         }
@@ -122,7 +138,7 @@ private final class FeedParserDelegate: NSObject, XMLParserDelegate {
             default: break
             }
         } else {
-            // フィード全体のタイトル（最初の <title> のみ）
+            // The feed's own title: the first <title> outside any item wins.
             if name == "title", feedTitle == nil, !value.isEmpty { feedTitle = value }
         }
         buffer = ""

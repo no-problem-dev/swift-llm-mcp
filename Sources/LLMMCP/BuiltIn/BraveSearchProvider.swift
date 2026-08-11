@@ -6,12 +6,12 @@ import FoundationNetworking
 
 // MARK: - BraveSearchProvider
 
-/// Brave Search REST APIを使用した検索プロバイダー
+/// Searches with the Brave Search REST API.
 ///
-/// Brave Search API キーが必要。
-/// https://brave.com/search/api/ から取得できる。
-///
-/// ## 使用例
+/// Brave's free tier allows roughly one query per second, which is what the default
+/// ``SearchResilienceConfiguration`` is tuned for — call this through
+/// ``ResilientSearchProvider`` unless you are pacing requests yourself. Get a key at
+/// <https://brave.com/search/api/>.
 ///
 /// ```swift
 /// let provider = BraveSearchProvider(apiKey: "YOUR_API_KEY")
@@ -28,14 +28,15 @@ public final class BraveSearchProvider: WebSearchProvider, @unchecked Sendable {
 
     // MARK: - Initialization
 
-    /// BraveSearchProviderを作成
+    /// Creates a provider, building a `URLSession`-backed transport unless one is supplied.
     ///
     /// - Parameters:
-    ///   - apiKey: Brave Search APIキー
-    ///   - searchLang: 検索言語（例: "ja"）
-    ///   - country: 国コード（例: "JP"）
-    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 15）
-    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
+    ///   - apiKey: Brave Search API key, sent as `X-Subscription-Token`. Not validated here.
+    ///   - searchLang: Search language, such as `"ja"`. Omitted from the request when `nil`.
+    ///   - country: Country code, such as `"JP"`. Omitted from the request when `nil`.
+    ///   - timeout: Per-request timeout in seconds. The default session also caps the whole
+    ///     resource at twice this.
+    ///   - transport: Substitute one in tests to avoid real network calls.
     public init(
         apiKey: String,
         searchLang: String? = nil,
@@ -59,6 +60,15 @@ public final class BraveSearchProvider: WebSearchProvider, @unchecked Sendable {
 
     // MARK: - WebSearchProvider
 
+    /// Runs one query against Brave's web search endpoint.
+    ///
+    /// `maxResults` is capped at 20 in the request, Brave's own page limit, and the reply is
+    /// then trimmed to `maxResults`. Only web results are used; news, video and other
+    /// verticals in the response are discarded.
+    ///
+    /// - Throws: ``WebSearchError/invalidQuery(_:)`` when the query cannot be put in a URL,
+    ///   ``WebSearchError/httpError(statusCode:)`` for any non-2xx status — including the
+    ///   429 that a missing rate limit produces — or a decoding error for an unexpected body.
     public func search(query: String, maxResults: Int) async throws -> [WebSearchResult] {
         var components = URLComponents(string: "https://api.search.brave.com/res/v1/web/search")!
         var queryItems = [

@@ -2,17 +2,18 @@ import Foundation
 
 // MARK: - HTMLDetector
 
-/// レスポンスが HTML かどうかを判定する。
+/// Classifies a response as HTML or as untranslatable binary.
 enum HTMLDetector {
-    /// Content-Type ヘッダーと先頭の HTML タグの両方で判定する。
+    /// Reports HTML when the Content-Type says so, or when the body opens with a doctype or `<html>`.
+    ///
+    /// The sniff exists because servers that omit or misreport Content-Type are common.
     static func isHTML(contentType: String?, content: String) -> Bool {
-        // Content-Type ベースの判定
         if let ct = contentType?.lowercased() {
             if ct.contains("text/html") || ct.contains("application/xhtml+xml") {
                 return true
             }
         }
-        // 先頭タグベースの判定
+        // Fall back to sniffing the opening tag.
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if trimmed.hasPrefix("<!doctype html") || trimmed.hasPrefix("<html") {
             return true
@@ -20,7 +21,9 @@ enum HTMLDetector {
         return false
     }
 
-    /// テキストとして処理できない（PDF/画像/音声/動画/バイナリ）Content-Type か。
+    /// Reports a Content-Type that cannot become text: PDF, image, audio, video or octet-stream.
+    ///
+    /// Judged from the header alone, so a binary body served without a Content-Type is missed.
     static func isNonTextBinary(contentType: String?) -> Bool {
         guard let ct = contentType?.lowercased() else { return false }
         return ct.contains("application/pdf")

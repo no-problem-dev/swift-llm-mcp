@@ -7,30 +7,36 @@ import FoundationNetworking
 
 // MARK: - ProbeResult
 
-/// 1 URL を fetch した結果の全記録。成功も失敗も握りつぶさず capture する。
+/// Everything one probed URL produced. Failures are recorded, never swallowed.
 struct ProbeResult: Codable {
     let url: String
     let category: ProbeCategory
     let expected: ExpectedOutcome
     let layer: FailureLayer
+    /// One line explaining the classification, for a human reading the report.
     let detail: String
-    /// 抽出本文の文字数（成功時のみ。失敗時は 0）
+    /// Characters extracted, or 0 on failure.
     let contentLength: Int
     let title: String?
     let wasTruncated: Bool
     let hasMore: Bool
-    /// 所要時間（秒）
+    /// Wall-clock seconds for the whole fetch, including extraction.
     let elapsed: Double
-    /// 期待結末と実際の分類が整合したか
+    /// Whether the outcome matched what the corpus predicted. `false` is the interesting
+    /// value: it marks a page that broke in an unexpected way.
     let matchedExpectation: Bool
-    /// 概算トークン数（取得できた本文ベース）
+    /// Rough token count for the extracted text. Zero on failure.
     var approxTokens: Int = 0
-    /// ペイロード品質分析（成功時のみ）
+    /// Noise breakdown, present only when something was extracted.
     var noise: NoiseReport? = nil
 }
 
-// MARK: - fetch の JSON 出力（WebToolKit 内 private なのでここで再定義）
+// MARK: - fetch tool output
 
+/// The `fetch` tool's JSON shape, redeclared here because `WebToolKit` keeps its own copy private.
+///
+/// A field rename in `WebToolKit` would not break the build; it would silently stop decoding
+/// here and every probe would fall into the "non-FetchResult JSON" branch.
 private struct FetchToolOutput: Decodable {
     let url: String
     let title: String?
@@ -49,23 +55,31 @@ private struct FetchToolOutput: Decodable {
 
 // MARK: - ProbeRunner
 
+/// Fetches every corpus entry and records how each one turned out.
 struct ProbeRunner {
+    /// Per-request timeout handed to each `WebToolKit`.
     let timeout: TimeInterval
+    /// How many fetches run at once. Raising it shortens the run but also raises the chance
+    /// of tripping a site's rate limiting, which shows up as extra 429s in the report.
     let maxConcurrency: Int
 
-    /// コーパス全体を並列実行する。順序はコーパス通りに揃える。
+    /// Runs the whole corpus, keeping `maxConcurrency` fetches in flight.
+    ///
+    /// Results come back in corpus order regardless of completion order, so two runs are
+    /// directly comparable. Never throws: a failed fetch becomes a ``ProbeResult`` with a
+    /// failure layer, which is the entire point of the tool. Progress is written to stderr
+    /// so it stays out of the report on stdout.
     func run(_ entries: [CorpusEntry]) async -> [ProbeResult] {
         var results = [ProbeResult?](repeating: nil, count: entries.count)
 
         await withTaskGroup(of: (Int, ProbeResult).self) { group in
             var nextIndex = 0
-            // 初期投入
             while nextIndex < min(maxConcurrency, entries.count) {
                 let i = nextIndex
                 group.addTask { (i, await self.probe(entries[i])) }
                 nextIndex += 1
             }
-            // 1 件完了するたびに次を投入（同時実行数を maxConcurrency に保つ）
+            // Refill on each completion to hold the in-flight count steady.
             while let (idx, result) = await group.next() {
                 results[idx] = result
                 let done = entries.count - results.compactMap { $0 }.count
@@ -83,15 +97,18 @@ struct ProbeRunner {
         return results.compactMap { $0 }
     }
 
-    /// 1 件を実行。本物の WebToolKit を毎回生成し、fetch ツールを呼ぶ。
+    /// Probes one URL through a real `WebToolKit`, built fresh so no state carries between entries.
+    ///
+    /// Goes through the actual `fetch` tool rather than `WebFetchEngine` directly, so the
+    /// tool's own argument decoding and pagination are exercised too.
     private func probe(_ entry: CorpusEntry) async -> ProbeResult {
         let toolkit = WebToolKit(timeout: timeout)
         guard let fetch = toolkit.tool(named: "fetch") else {
             return result(entry, .unknown, "fetch tool not found", 0, nil, false, false, 0)
         }
 
-        // 分析のため本文を大きめに取得（fetch の既定 max_length=5000 では切れる）。
-        // LLM が実際に受け取る Markdown 抽出結果（raw=false）を対象にする。
+        // 200,000 characters, far past the tool's 5000 default, so noise analysis sees the
+        // whole page. raw is left off, so this measures the Markdown an LLM would receive.
         let inputDict: [String: Any] = ["url": entry.url, "max_length": 200_000]
         let input = try? JSONSerialization.data(withJSONObject: inputDict)
         let start = Date()
@@ -108,14 +125,15 @@ struct ProbeRunner {
                     let detail = layer == .okThinContent
                         ? "抽出本文 \(out.contentLength) 文字（閾値 \(FailureClassifier.thinContentThreshold) 未満）"
                         : "抽出本文 \(out.contentLength) 文字"
-                    // 成功系のみペイロード品質を分析（無駄トークンの所在を定量化）
+                    // Noise analysis only makes sense when there is content to analyse.
                     let noise = ContentQualityAnalyzer.analyze(out.content)
                     let tokens = NoiseReport.approxTokens(out.content)
                     return result(entry, layer, detail, out.contentLength, out.title,
                                   out.wasTruncated, out.hasMore, elapsed,
                                   approxTokens: tokens, noise: noise)
                 }
-                // JSON だが期待構造でない（fetch_json 等の別形）→ 成功扱いだが内容で判定
+                // JSON in an unexpected shape. Counted as a success and judged by byte length,
+                // so a decoding break here looks like a very short page rather than an error.
                 let len = data.count
                 return result(entry, len < FailureClassifier.thinContentThreshold ? .okThinContent : .ok,
                               "non-FetchResult JSON, \(len) bytes", len, nil, false, false, elapsed)
@@ -150,9 +168,12 @@ struct ProbeRunner {
 
 // MARK: - ExpectationMatcher
 
-/// 事前期待 (``ExpectedOutcome``) と実際の分類 (``FailureLayer``) が整合するか判定。
-/// 「想定外の壊れ方」を浮かび上がらせるための緩い対応表。
+/// Decides whether a probe's outcome agrees with what the corpus predicted for it.
+///
+/// Deliberately permissive: several layers satisfy each expectation. The purpose is to
+/// surface pages that broke in a way nobody anticipated, not to pin down an exact outcome.
 enum ExpectationMatcher {
+    /// Reports whether `actual` is one of the outcomes `expected` allows.
     static func matches(expected: ExpectedOutcome, actual: FailureLayer) -> Bool {
         switch expected {
         case .readableSuccess:
@@ -169,7 +190,8 @@ enum ExpectationMatcher {
         case .invalidURL:
             return actual == .urlValidation
         case .binaryLikely:
-            // バイナリは P0-b で contentTooLarge に分類される。hotlink保護で 4xx もありうる
+            // Binary content is classified as contentTooLarge. Hotlink protection can also
+            // turn it into a 4xx, and some hosts serve it as text, so all four are accepted.
             return actual == .contentTooLarge || actual == .httpClientError
                 || actual == .ok || actual == .okThinContent
         case .jsonSuccess:

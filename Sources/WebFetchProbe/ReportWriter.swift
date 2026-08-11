@@ -2,8 +2,16 @@ import Foundation
 
 // MARK: - ReportWriter
 
-/// 計測結果を Markdown + JSON にまとめて書き出す。
+/// Writes a probe run out as a human-readable Markdown report and a machine-readable JSON one.
+///
+/// The JSON is the input to ``ReportDiff``, so it is the file to keep; the Markdown is for reading.
 enum ReportWriter {
+    /// Writes both files into `dir`, creating it if needed, and prints their paths.
+    ///
+    /// Filenames are keyed on `timestamp`, so nothing is overwritten and old runs accumulate.
+    ///
+    /// - Throws: A file-system error. The Markdown is written first, so a failure can leave
+    ///   a report with no JSON beside it.
     static func write(_ results: [ProbeResult], to dir: URL, timestamp: String) throws {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -20,15 +28,19 @@ enum ReportWriter {
         print("📄 JSON:     \(jsonURL.path)")
     }
 
-    // MARK: - Markdown 生成
+    // MARK: - Markdown generation
 
+    /// Renders the report: summary, latency, failure distribution, per-category success
+    /// rates, unexpected outcomes, failing URLs, payload quality, suggestions and raw rows.
+    ///
+    /// Output is Japanese.
     static func markdown(_ results: [ProbeResult], timestamp: String) -> String {
         var out = "# Web Fetch Tool 安定性レポート\n\n"
         out += "- 生成日時: \(timestamp)\n"
         out += "- 対象: `swift-llm-mcp` `WebToolKit.fetch`（実ネットワーク）\n"
         out += "- URL 件数: \(results.count)\n\n"
 
-        // 全体サマリ
+        // Overall summary.
         let okCount = results.filter { $0.layer == .ok }.count
         let thin = results.filter { $0.layer == .okThinContent }.count
         let failed = results.filter { $0.layer.isFailure && $0.layer != .okThinContent }.count
@@ -41,14 +53,14 @@ enum ReportWriter {
         out += row("期待と不一致（想定外の挙動）", unexpected, results.count)
         out += "\n"
 
-        // レイテンシ
+        // Latency percentiles.
         let times = results.map { $0.elapsed }.sorted()
         if !times.isEmpty {
             out += "### レイテンシ\n\n"
             out += "- p50: \(fmt(percentile(times, 0.5)))s / p95: \(fmt(percentile(times, 0.95)))s / max: \(fmt(times.last!))s\n\n"
         }
 
-        // 失敗層の分布
+        // Distribution across pipeline layers, which points at what to fix.
         out += "## 失敗層の分布\n\n"
         out += "| 層 | 説明 | 件数 |\n|---|---|---:|\n"
         for layer in FailureLayer.allCases {
@@ -57,7 +69,7 @@ enum ReportWriter {
         }
         out += "\n"
 
-        // カテゴリ別マトリクス
+        // Success rate per category.
         out += "## カテゴリ別 成功率\n\n"
         out += "| カテゴリ | 件数 | ok | thin | 失敗 | 成功率(ok+thin) |\n|---|---:|---:|---:|---:|---:|\n"
         for cat in ProbeCategory.allCases {
@@ -71,7 +83,7 @@ enum ReportWriter {
         }
         out += "\n"
 
-        // 想定外の挙動
+        // Outcomes that did not match the corpus prediction: the most interesting section.
         let mismatches = results.filter { !$0.matchedExpectation }
         if !mismatches.isEmpty {
             out += "## ⚠️ 想定外の挙動（期待と不一致）\n\n"
@@ -83,7 +95,7 @@ enum ReportWriter {
             out += "\n"
         }
 
-        // 失敗 URL 一覧
+        // Every failing URL, grouped by layer.
         let failures = results.filter { $0.layer.isFailure }
         if !failures.isEmpty {
             out += "## 失敗・劣化した URL 一覧\n\n"
@@ -94,13 +106,13 @@ enum ReportWriter {
             out += "\n"
         }
 
-        // ペイロード品質 / トークン浪費
+        // Payload quality: where tokens are being wasted inside successful fetches.
         out += payloadQuality(results)
 
-        // 改善示唆
+        // Suggestions derived from the numbers above.
         out += improvementSuggestions(results)
 
-        // 全結果
+        // Raw rows, one per URL.
         out += "## 全結果（生データ）\n\n"
         out += "| URL | 層 | 本文長 | ≈tok | 無駄字 | 時間(s) | 期待一致 |\n|---|---|---:|---:|---:|---:|:---:|\n"
         for r in results {
@@ -111,9 +123,12 @@ enum ReportWriter {
         return out
     }
 
-    // MARK: - ペイロード品質 / トークン浪費
+    // MARK: - Payload quality and wasted tokens
 
-    /// 「成功」した抽出本文の中に紛れる、LLM トークンを浪費する余計なペイロードを集計。
+    /// Summarises the waste inside successful extractions, by signal and by worst page.
+    ///
+    /// Returns an empty string when no result carried a noise report, so the section
+    /// disappears rather than appearing empty.
     static func payloadQuality(_ results: [ProbeResult]) -> String {
         let withNoise = results.filter { $0.noise != nil }
         guard !withNoise.isEmpty else { return "" }
@@ -128,7 +143,7 @@ enum ReportWriter {
         out += "- 概算総トークン（取得本文ベース, ≈utf8÷4）: **\(totalTokens.formattedThousands)**\n"
         out += "- 無駄と推定される文字数合計: **\(totalWasted.formattedThousands)** 字（≈ \((totalWasted / 4).formattedThousands) トークン）\n\n"
 
-        // シグナル別集計
+        // Totals per noise signal.
         out += "### ノイズ種別ごとの集計\n\n"
         out += "| ノイズ種別 | 検出ページ数 | 無駄文字(合計) | ≈トークン |\n|---|---:|---:|---:|\n"
         for signal in NoiseSignal.allCases {
@@ -139,7 +154,7 @@ enum ReportWriter {
         }
         out += "\n"
 
-        // 無駄トークンが多い Top ページ
+        // The worst offenders, which is where a fix pays off most.
         let ranked = withNoise
             .map { ($0, $0.noise?.totalWastedChars ?? 0) }
             .filter { $0.1 > 0 }
@@ -157,7 +172,7 @@ enum ReportWriter {
             out += "\n"
         }
 
-        // 代表的な無駄スニペット
+        // Sample snippets, so the numbers can be checked against real text.
         let samples = withNoise.compactMap { r -> String? in
             guard let s = r.noise?.samples, !s.isEmpty else { return nil }
             return "- `\(trunc(r.url, 40))`: " + s.joined(separator: " / ")
@@ -170,8 +185,13 @@ enum ReportWriter {
         return out
     }
 
-    // MARK: - 改善示唆（データ駆動）
+    // MARK: - Suggestions, derived from the measurements rather than written by hand
 
+    /// Emits a suggestion for each failure pattern the run actually exhibited.
+    ///
+    /// Pattern-matched on counts, so it names symptoms rather than diagnosing causes: a
+    /// suggestion appears because a layer had at least one hit, not because it was confirmed.
+    /// Output is Japanese.
     static func improvementSuggestions(_ results: [ProbeResult]) -> String {
         var out = "## 改善示唆\n\n"
         var any = false
@@ -211,7 +231,7 @@ enum ReportWriter {
             any = true
             out += "- **サイズ超過/バイナリ (\(large.count)件)**: 仕様通りの遮断。`fetch_headers` で事前に Content-Type/Content-Length を確認するフローへ誘導すると無駄な転送を削減できる。\n"
         }
-        // ペイロード品質起点
+        // Suggestions that come from the noise analysis rather than the failure layers.
         let withNoise = results.filter { $0.noise != nil }
         let base64Pages = withNoise.filter { ($0.noise?.countsBySignal[NoiseSignal.base64DataURI.rawValue] ?? 0) > 0 }
         if !base64Pages.isEmpty {
@@ -250,6 +270,7 @@ enum ReportWriter {
         let pct = total > 0 ? Int(Double(count) / Double(total) * 100) : 0
         return "| \(name) | \(count) | \(pct)% |\n"
     }
+    /// Nearest-rank percentile over an already-sorted array. No interpolation.
     private static func percentile(_ sorted: [Double], _ p: Double) -> Double {
         guard !sorted.isEmpty else { return 0 }
         let idx = min(sorted.count - 1, Int(Double(sorted.count - 1) * p))

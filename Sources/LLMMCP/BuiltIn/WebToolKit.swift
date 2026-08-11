@@ -8,52 +8,48 @@ import WebFetchKit
 
 // MARK: - WebToolKit
 
-/// Web操作ツールを提供するToolKit（`WebFetchKit.WebFetchEngine` の MCP アダプタ）
+/// Gives the model three web tools: `fetch`, `fetch_json` and `fetch_headers`.
 ///
-/// URL からコンテンツを取得するツールを提供する。
-/// HTML レスポンスは自動で Markdown 形式に変換される。
+/// A thin MCP adapter over `WebFetchKit.WebFetchEngine`. Its own contribution is
+/// pagination: `fetch` returns at most 5000 characters at a time along with a
+/// `next_hint` telling the model the `start_index` to ask for next, so a long page arrives
+/// over several calls instead of flooding the context window.
 ///
-/// ## 使用例
+/// Passing `allowedDomains` is the only access control here — with the default `nil` the
+/// model can reach any http or https URL, including private network addresses.
 ///
 /// ```swift
 /// let tools = ToolSet {
 ///     WebToolKit()
 /// }
 ///
-/// // または特定のドメインのみ許可
 /// let restrictedTools = ToolSet {
 ///     WebToolKit(allowedDomains: ["api.example.com", "data.example.com"])
 /// }
 ///
-/// // カスタム抽出器を使用
 /// let customTools = ToolSet {
 ///     WebToolKit(extractor: MyCustomExtractor())
 /// }
 /// ```
-///
-/// ## 提供されるツール
-///
-/// - `fetch`: URLからコンテンツを取得（HTML自動Markdown変換、ページネーション対応）
-/// - `fetch_json`: URLからJSONを取得してパース
-/// - `fetch_headers`: URLからHTTPヘッダーのみを取得
 public final class WebToolKit: ToolKit, @unchecked Sendable {
     // MARK: - Properties
 
     public let name: String = "web"
 
-    /// フェッチエンジン（純粋層）
     private let engine: WebFetchEngine
 
     // MARK: - Initialization
 
-    /// WebToolKitを作成
+    /// Creates the kit and the fetch engine behind it.
     ///
     /// - Parameters:
-    ///   - allowedDomains: 許可するドメインの配列（nilの場合は全て許可）
-    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 30）
-    ///   - maxContentSize: 最大取得サイズ（デフォルト: 5MB）
-    ///   - extractor: コンテンツ抽出器（デフォルト: SwiftSoupContentExtractor）
-    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
+    ///   - allowedDomains: Hosts the model may reach. `nil` allows every host. Matching is
+    ///     exact, so subdomains must be listed individually.
+    ///   - timeout: Per-request timeout in seconds.
+    ///   - maxContentSize: Byte cap on a response body. Applied after the body has been
+    ///     received in full, and `fetch` truncates rather than failing.
+    ///   - extractor: HTML-to-Markdown extractor. Defaults to `SwiftSoupContentExtractor`.
+    ///   - transport: Substitute one in tests to avoid real network calls.
     public init(
         allowedDomains: [String]? = nil,
         timeout: TimeInterval = 30,
@@ -82,7 +78,12 @@ public final class WebToolKit: ToolKit, @unchecked Sendable {
 
     // MARK: - Tool Definitions
 
-    /// fetch ツール（統合版）
+    /// The `fetch` tool: retrieve a URL, extract readable text, and hand back one page of it.
+    ///
+    /// Paginates over characters, not bytes or tokens, defaulting to 5000 characters from
+    /// `start_index` 0. `has_more` and `next_hint` tell the model whether to ask again.
+    /// A `start_index` past the end is clamped rather than rejected, so it yields an empty
+    /// `content` with `has_more: false` instead of an error.
     private var fetchTool: BuiltInTool {
         BuiltInTool(
             name: "fetch",
@@ -122,7 +123,8 @@ public final class WebToolKit: ToolKit, @unchecked Sendable {
                 raw: input.raw ?? false
             )
 
-            // ページネーション処理
+            // Slice out the requested window. Indices count Characters, so a page of CJK
+            // text yields fewer bytes per call than an ASCII one.
             let fullText = doc.text
             let totalLength = fullText.count
             let safeStartIndex = min(startIndex, max(0, totalLength - 1))
@@ -157,7 +159,11 @@ public final class WebToolKit: ToolKit, @unchecked Sendable {
         }
     }
 
-    /// fetch_json ツール
+    /// The `fetch_json` tool: retrieve a URL and return the parsed JSON.
+    ///
+    /// Not paginated. An oversized body is rejected rather than truncated, because half a
+    /// JSON document cannot be parsed, and a body that is not JSON fails to parse and
+    /// reaches the model as a tool error.
     private var fetchJSONTool: BuiltInTool {
         BuiltInTool(
             name: "fetch_json",
@@ -202,7 +208,10 @@ public final class WebToolKit: ToolKit, @unchecked Sendable {
         }
     }
 
-    /// fetch_headers ツール
+    /// The `fetch_headers` tool: a HEAD request, so the model can check size or content type
+    /// before committing to a full fetch.
+    ///
+    /// A non-2xx status is reported in the result rather than raised as an error.
     private var fetchHeadersTool: BuiltInTool {
         BuiltInTool(
             name: "fetch_headers",

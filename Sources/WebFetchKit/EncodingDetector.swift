@@ -2,17 +2,19 @@ import Foundation
 
 // MARK: - EncodingDetector
 
-/// レスポンスバイト列を適切な文字エンコーディングでデコードする。
+/// Decodes response bytes into a string, working out the character encoding as it goes.
 ///
-/// Content-Type ヘッダーの charset を解析し、適切なエンコーディングで変換する。
-/// charset が無い／変換に失敗した場合はフォールバックチェーンを使用する。
+/// Order of preference: the Content-Type charset, the charset declared in a `<meta>` tag,
+/// UTF-8, then Shift_JIS, EUC-JP, Windows-1252, ISO-8859-1 and ASCII.
 ///
-/// フォールバック順: UTF-8 → ISO-8859-1 → Windows-1252 → Shift_JIS → EUC-JP → ASCII
+/// The self-validating encodings come before the permissive ones on purpose. Latin-1 and
+/// CP1252 accept any byte sequence, so putting either of them first would turn every
+/// undeclared Japanese page into mojibake instead of letting Shift_JIS claim it.
 enum EncodingDetector {
 
-    /// レスポンスデータを文字列にデコードする。失敗時は nil。
+    /// Decodes bytes to text, or returns `nil` when no candidate encoding accepts them.
     static func decode(_ data: Data, contentType: String?) -> String? {
-        // 1. HTTP ヘッダーの charset（最優先・authoritative）
+        // 1. The HTTP header charset is authoritative.
         if let contentType,
            let charset = parseCharset(from: contentType),
            let encoding = stringEncoding(from: charset),
@@ -20,28 +22,27 @@ enum EncodingDetector {
             return result
         }
 
-        // 2. HTML <meta> タグの charset。
-        //    日系/レガシーサイトは HTTP ヘッダーに charset を入れず meta だけで
-        //    宣言することが多い。これを見ないと Shift_JIS/EUC-JP が下の Latin1
-        //    フォールバックに食われて文字化けする（ITmedia 等で実際に発生）。
+        // 2. The charset declared in an HTML <meta> tag. Japanese and older sites often
+        //    declare it only there. Skipping this step lets the Latin-1 fallback below
+        //    swallow Shift_JIS and EUC-JP pages as mojibake (observed on ITmedia).
         if let metaCharset = sniffMetaCharset(data),
            let encoding = stringEncoding(from: metaCharset),
            let result = String(data: data, encoding: encoding) {
             return result
         }
 
-        // 3. UTF-8（自己検証あり = 不正な UTF-8 は失敗するので安全なデフォルト）
+        // 3. UTF-8 is self-validating: invalid input fails rather than decoding to garbage.
         if let result = String(data: data, encoding: .utf8) {
             return result
         }
 
-        // 4. 最終フォールバック。Latin1/CP1252 は任意バイトを受理してしまうため、
-        //    妥当性検証のある Shift_JIS/EUC-JP を先に試す（CJK 復元を優先）。
+        // 4. Last resort. Shift_JIS and EUC-JP validate their input, so they get first
+        //    refusal; Latin-1 and CP1252 accept anything and would win every time.
         let fallbackEncodings: [String.Encoding] = [
-            .shiftJIS,        // Shift_JIS
-            .japaneseEUC,     // EUC-JP
-            .windowsCP1252,   // Windows-1252
-            .isoLatin1,       // ISO-8859-1（最後の砦・全バイト受理）
+            .shiftJIS,
+            .japaneseEUC,
+            .windowsCP1252,
+            .isoLatin1,       // Accepts every byte, so nothing after it is ever reached.
             .ascii,
         ]
         for encoding in fallbackEncodings {
@@ -52,9 +53,12 @@ enum EncodingDetector {
         return nil
     }
 
-    /// HTML 先頭を走査して `<meta charset>` / `<meta http-equiv>` の charset を取得する。
+    /// Reads the charset out of a `<meta charset>` or `<meta http-equiv>` tag near the top of the document.
+    ///
+    /// Only the first 4 KB is scanned, so a declaration pushed past that by inline scripts
+    /// or a long comment is missed.
     static func sniffMetaCharset(_ data: Data) -> String? {
-        // 先頭 4KB を Latin1（全バイト可逆）で読み、charset 宣言を探す
+        // Latin-1 decodes any byte, which is what makes this scan safe before the encoding is known.
         let head = data.prefix(4096)
         guard let text = String(data: head, encoding: .isoLatin1)?.lowercased() else { return nil }
         guard text.contains("charset"), let regex = try? NSRegularExpression(
@@ -66,9 +70,9 @@ enum EncodingDetector {
         return ns.substring(with: match.range(at: 1))
     }
 
-    /// Content-Type ヘッダーから charset を抽出する。
+    /// Pulls the charset parameter out of a Content-Type header, lowercased and unquoted.
     static func parseCharset(from contentType: String) -> String? {
-        // "text/html; charset=UTF-8" → "UTF-8"
+        // "text/html; charset=UTF-8" -> "utf-8"
         let components = contentType.lowercased().components(separatedBy: ";")
         for component in components {
             let trimmed = component.trimmingCharacters(in: .whitespaces)
@@ -81,7 +85,11 @@ enum EncodingDetector {
         return nil
     }
 
-    /// charset 名から String.Encoding に変換する。
+    /// Maps a charset name to a `String.Encoding`, falling back to the IANA registry for names not listed here.
+    ///
+    /// The registry lookup is Core Foundation's and exists only on Apple platforms. Elsewhere a
+    /// name outside the switch below returns `nil` instead of resolving, so a page in an unusual
+    /// legacy encoding is reported as undecodable rather than decoded as something else.
     static func stringEncoding(from charset: String) -> String.Encoding? {
         switch charset.lowercased() {
         case "utf-8", "utf8":
@@ -105,11 +113,16 @@ enum EncodingDetector {
         case "utf-16le":
             return .utf16LittleEndian
         default:
-            // CFStringEncoding 経由で追加の変換を試みる
+            #if canImport(Darwin)
+            // Ask Core Foundation about names this switch does not list.
             let cfEncoding = CFStringConvertIANACharSetNameToEncoding(charset as CFString)
             guard cfEncoding != kCFStringEncodingInvalidId else { return nil }
             let nsEncoding = CFStringConvertEncodingToNSStringEncoding(cfEncoding)
             return String.Encoding(rawValue: nsEncoding)
+            #else
+            // swift-corelibs-foundation does not surface the IANA charset registry.
+            return nil
+            #endif
         }
     }
 }

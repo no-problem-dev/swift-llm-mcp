@@ -4,37 +4,31 @@ import LLMTool
 
 // MARK: - UtilityToolKit
 
-/// 一般的なユーティリティツールを提供するToolKit
+/// Four small tools for things a model cannot do on its own: `get_current_time`,
+/// `calculate`, `generate_uuid` and `sleep`.
 ///
-/// 日時取得、計算、UUID 生成など、汎用的なユーティリティ機能を提供する。
-///
-/// ## 使用例
+/// `get_current_time` is the one that matters most. A model has no clock and will otherwise
+/// invent a date, so include this kit whenever the conversation involves "today", "now" or
+/// anything relative to them.
 ///
 /// ```swift
 /// let tools = ToolSet {
 ///     UtilityToolKit()
 /// }
 /// ```
-///
-/// ## 提供されるツール
-///
-/// - `get_current_time`: 現在時刻を指定フォーマットで取得
-/// - `calculate`: 基本的な数学計算を実行
-/// - `generate_uuid`: ランダムなUUIDを生成
-/// - `sleep`: 指定時間待機
 public final class UtilityToolKit: ToolKit, @unchecked Sendable {
     // MARK: - Properties
 
     public let name: String = "utility"
 
-    /// タイムゾーン
     private let timeZone: TimeZone
 
     // MARK: - Initialization
 
-    /// UtilityToolKitを作成
+    /// Creates the kit.
     ///
-    /// - Parameter timeZone: 時刻取得に使用するタイムゾーン（デフォルト: システムのローカル）
+    /// - Parameter timeZone: Zone used when a call does not name one. Defaults to the
+    ///   system zone, which on a server is usually UTC rather than the user's.
     public init(timeZone: TimeZone = .current) {
         self.timeZone = timeZone
     }
@@ -52,7 +46,11 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
 
     // MARK: - Tool Definitions
 
-    /// get_current_time ツール
+    /// The `get_current_time` tool: the current time, formatted and in a named zone.
+    ///
+    /// An unrecognised timezone identifier falls back to the kit's zone without saying so,
+    /// though the result echoes the zone actually used. An unrecognised format string is
+    /// passed to `DateFormatter`, which produces whatever it makes of it rather than failing.
     private var getCurrentTimeTool: BuiltInTool {
         BuiltInTool(
             name: "get_current_time",
@@ -76,7 +74,7 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
         ) { [timeZone] data in
             let input = try JSONDecoder().decode(GetCurrentTimeInput.self, from: data)
 
-            // タイムゾーンの決定
+            // An unparseable identifier silently falls back to the kit's zone.
             let tz: TimeZone
             if let tzIdentifier = input.timezone,
                let parsedTZ = TimeZone(identifier: tzIdentifier) {
@@ -85,7 +83,6 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
                 tz = timeZone
             }
 
-            // フォーマットの決定
             let formatString = input.format ?? "ISO8601"
             let date = Date()
 
@@ -111,7 +108,10 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
         }
     }
 
-    /// calculate ツール
+    /// The `calculate` tool: one arithmetic operation on `Double` operands.
+    ///
+    /// Ten named operations, not an expression evaluator, so anything compound takes several
+    /// calls. Everything is double-precision, so large integers lose exactness.
     private var calculateTool: BuiltInTool {
         BuiltInTool(
             name: "calculate",
@@ -202,7 +202,11 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
         }
     }
 
-    /// generate_uuid ツール
+    /// The `generate_uuid` tool: one or more random version-4 UUIDs.
+    ///
+    /// `count` is clamped to 1...100 rather than rejected. Note that `standard` and
+    /// `compact` are lowercased while `uppercase` is not, so `standard` and `uppercase`
+    /// differ only in case.
     private var generateUUIDTool: BuiltInTool {
         BuiltInTool(
             name: "generate_uuid",
@@ -236,7 +240,7 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
                     return uuid.uuidString.replacingOccurrences(of: "-", with: "").lowercased()
                 case "uppercase":
                     return uuid.uuidString
-                default: // standard
+                default:  // standard
                     return uuid.uuidString.lowercased()
                 }
             }
@@ -247,7 +251,11 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
         }
     }
 
-    /// sleep ツール
+    /// The `sleep` tool: pause before continuing, for polling and for backing off.
+    ///
+    /// The duration is clamped to 0.001...60 seconds rather than rejected, and the result
+    /// reports both what was asked for and what was actually waited. Cancellation propagates,
+    /// so a cancelled agent run does not have to wait this out.
     private var sleepTool: BuiltInTool {
         BuiltInTool(
             name: "sleep",
@@ -268,7 +276,7 @@ public final class UtilityToolKit: ToolKit, @unchecked Sendable {
         ) { data in
             let input = try JSONDecoder().decode(SleepInput.self, from: data)
 
-            // 範囲を制限（1ms〜60秒）
+            // Clamp rather than reject: a model asking for an hour gets a minute.
             let duration = min(max(input.seconds, 0.001), 60.0)
             let nanoseconds = UInt64(duration * 1_000_000_000)
 
@@ -331,7 +339,7 @@ private struct SleepResult: Codable {
 
 // MARK: - Errors
 
-/// UtilityToolKitのエラー
+/// Failures from ``UtilityToolKit``.
 public enum UtilityToolKitError: Error, LocalizedError {
     case missingOperand(operation: String, operand: String)
     case divisionByZero

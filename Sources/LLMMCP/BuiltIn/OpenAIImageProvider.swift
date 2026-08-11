@@ -7,10 +7,11 @@ import LLMClient
 
 // MARK: - OpenAIImageProvider
 
-/// OpenAI gpt-image-1 を使用した画像生成プロバイダー
+/// Generates images with OpenAI's gpt-image-1.
 ///
-/// OpenAI API キーが必要。
-/// `POST https://api.openai.com/v1/images/generations` を直接呼び出す。
+/// The only provider that reports how it rewrote the prompt, and the only one that
+/// distinguishes a content-policy rejection from a generic bad request. Calls
+/// `POST https://api.openai.com/v1/images/generations` directly rather than through an SDK.
 public final class OpenAIImageProvider: ImageGenerationProvider, @unchecked Sendable {
     // MARK: - Properties
 
@@ -20,12 +21,13 @@ public final class OpenAIImageProvider: ImageGenerationProvider, @unchecked Send
 
     // MARK: - Initialization
 
-    /// OpenAIImageProvider を作成
+    /// Creates a provider, building a `URLSession`-backed transport unless one is supplied.
     ///
     /// - Parameters:
-    ///   - apiKey: OpenAI API キー
-    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 60）
-    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
+    ///   - apiKey: OpenAI API key, sent as a bearer token.
+    ///   - timeout: Per-request timeout in seconds. Generation routinely takes tens of
+    ///     seconds, which is why this defaults far higher than the search providers.
+    ///   - transport: Substitute one in tests to avoid real network calls.
     public init(apiKey: String, timeout: TimeInterval = 60, transport: (any HTTPTransport)? = nil) {
         self.apiKey = apiKey
         self.timeout = timeout
@@ -41,13 +43,20 @@ public final class OpenAIImageProvider: ImageGenerationProvider, @unchecked Send
 
     // MARK: - ImageGenerationProvider
 
-    /// 画像を生成
+    /// Generates one PNG.
+    ///
+    /// `hd` maps to OpenAI's `high` quality and `standard` to `auto`, letting the model
+    /// choose. Only the first image is used, and the response is base64 in the body, so
+    /// nothing is downloaded afterwards.
     ///
     /// - Parameters:
-    ///   - prompt: 画像生成プロンプト
-    ///   - size: 画像サイズ（square / landscape / portrait）
-    ///   - quality: 画像品質（standard / hd）
-    /// - Returns: 生成された画像データ
+    ///   - prompt: Description of the image. OpenAI may rewrite it; the rewrite comes back
+    ///     in ``GeneratedImageData/revisedPrompt``.
+    ///   - size: 1024x1024, 1536x1024 or 1024x1536.
+    ///   - quality: `hd` costs more and takes longer.
+    /// - Throws: ``ImageGenerationToolError/contentPolicyViolation`` when a 400 identifies
+    ///   itself as one, ``ImageGenerationToolError/httpError(statusCode:)`` otherwise, and
+    ///   ``ImageGenerationToolError/invalidResponse`` for an empty or undecodable payload.
     /// - Throws: ``ImageGenerationToolError``
     public func generateImage(prompt: String, size: ImageGenerationSize, quality: ImageGenerationQuality) async throws -> GeneratedImageData {
         let url = URL(string: "https://api.openai.com/v1/images/generations")!

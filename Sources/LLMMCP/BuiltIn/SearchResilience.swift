@@ -5,27 +5,29 @@ import FoundationNetworking
 
 // MARK: - SearchResilienceConfiguration
 
-/// レジリエンス機能の設定
+/// Tuning for ``ResilientSearchProvider``: rate limit, circuit breaker, cache and retries.
 public struct SearchResilienceConfiguration: Sendable {
-    /// 1秒あたりの最大リクエスト数
+    /// Token refill rate, in requests per second. Also the bucket capacity, with a floor of 1.
     public let maxRequestsPerSecond: Double
 
-    /// サーキットブレーカーの失敗閾値
+    /// Consecutive failures that open the circuit. Each retry attempt counts separately, so
+    /// one search using every attempt contributes more than one failure.
     public let failureThreshold: Int
 
-    /// サーキットブレーカーのリセット待機時間（秒）
+    /// Seconds an open circuit stays open before it will admit a trial request.
     public let resetTimeout: TimeInterval
 
-    /// キャッシュのTTL（秒）
+    /// Seconds a cached result stays valid.
     public let cacheTTL: TimeInterval
 
-    /// キャッシュの最大エントリ数
+    /// Cache capacity. Reaching it evicts the least recently used entry, so the cache is bounded.
     public let maxCacheEntries: Int
 
-    /// リトライ回数
+    /// Retries after the first attempt. `1` means two attempts in total; `0` disables retrying.
     public let maxRetries: Int
 
-    /// デフォルト設定
+    /// One request per second, circuit opens at 5 failures for 60 seconds, 100 cached
+    /// results for 5 minutes, one retry.
     public static let `default` = SearchResilienceConfiguration(
         maxRequestsPerSecond: 1.0,
         failureThreshold: 5,
@@ -54,16 +56,25 @@ public struct SearchResilienceConfiguration: Sendable {
 
 // MARK: - RateLimiter
 
-/// トークンバケット方式のレートリミッター
+/// A token bucket that paces requests by sleeping, never by throwing.
+///
+/// Tokens refill continuously at `maxRequestsPerSecond` and the bucket holds at most that
+/// many, with a floor of one, so a burst up to the capacity goes through immediately and
+/// the rest is spread out.
+///
+/// It is a pacer, not a hard limit. The actor is released while a caller sleeps, so several
+/// concurrent callers can each observe an empty bucket, each wait, and then all proceed —
+/// the rate is respected on average but can be exceeded at any instant.
 public actor RateLimiter {
     private let maxTokens: Double
     private let refillRate: Double // tokens per second
     private var tokens: Double
     private var lastRefill: ContinuousClock.Instant
 
-    /// RateLimiterを作成
+    /// Creates a limiter with a full bucket, so the first requests are not delayed.
     ///
-    /// - Parameter maxRequestsPerSecond: 1秒あたりの最大リクエスト数
+    /// - Parameter maxRequestsPerSecond: Refill rate. Values below 1 still give a bucket of
+    ///   1 token, so one request always passes immediately after a quiet period.
     public init(maxRequestsPerSecond: Double) {
         self.maxTokens = max(maxRequestsPerSecond, 1.0)
         self.refillRate = maxRequestsPerSecond
@@ -71,9 +82,14 @@ public actor RateLimiter {
         self.lastRefill = .now
     }
 
-    /// リクエスト許可を待機
+    /// Takes one token, sleeping first if the bucket is empty.
     ///
-    /// トークンが利用可能になるまで待機し、1 トークンを消費する。
+    /// The wait is bounded by one refill interval — `1 / maxRequestsPerSecond` seconds — so
+    /// this never blocks indefinitely and never throws.
+    ///
+    /// Cancellation returns early **and grants the request anyway**, without consuming a
+    /// token. A cancelled caller that goes on to make its request is unpaced, so callers
+    /// that care must check `Task.isCancelled` themselves.
     public func acquire() async {
         refillTokens()
 
@@ -82,18 +98,19 @@ public actor RateLimiter {
             return
         }
 
-        // Wait for token to become available
+        // Sleep just long enough for the bucket to reach one token.
         let waitTime = (1.0 - tokens) / refillRate
         do {
             try await Task.sleep(for: .milliseconds(Int(waitTime * 1000)))
         } catch {
-            // Cancelled - allow caller to handle
+            // Cancelled. Returning here lets the caller decide what to do.
             return
         }
         refillTokens()
         tokens = max(tokens - 1.0, 0)
     }
 
+    /// Credits tokens for the time since the last refill, capped at the bucket size.
     private func refillTokens() {
         let now = ContinuousClock.Instant.now
         let elapsed = now - lastRefill
@@ -105,12 +122,20 @@ public actor RateLimiter {
 
 // MARK: - CircuitBreaker
 
-/// サーキットブレーカー（3状態遷移）
+/// Stops calling a provider that keeps failing, and lets it back in after a cooling-off period.
+///
+/// The failure count is consecutive: any success resets it to zero, so intermittent errors
+/// never accumulate to the threshold.
 public actor CircuitBreaker {
-    /// サーキットブレーカーの状態
+    /// Where the breaker is in its cycle.
     public enum State: Sendable {
+        /// Everything passes.
         case closed
+        /// Nothing passes until `resetTimeout` has elapsed since the last failure.
         case open
+        /// Trial period. Requests pass, and the next result decides: success closes the
+        /// breaker, failure reopens it. Nothing limits how many requests pass here, so
+        /// concurrent callers all get through at once.
         case halfOpen
     }
 
@@ -120,21 +145,21 @@ public actor CircuitBreaker {
     private var lastFailureTime: ContinuousClock.Instant?
     private(set) public var state: State = .closed
 
-    /// CircuitBreakerを作成
+    /// Creates a closed breaker.
     ///
     /// - Parameters:
-    ///   - failureThreshold: open状態に遷移する失敗回数
-    ///   - resetTimeout: open→halfOpenに遷移する待機時間（秒）
+    ///   - failureThreshold: Consecutive failures that open the breaker.
+    ///   - resetTimeout: Seconds after the last failure before a trial request is admitted.
     public init(failureThreshold: Int, resetTimeout: TimeInterval) {
         self.failureThreshold = failureThreshold
         self.resetTimeout = resetTimeout
     }
 
-    /// リクエストの実行可否を確認し、必要に応じて状態遷移
+    /// Asks whether a request may proceed, moving the breaker to half-open when the timeout has passed.
     ///
-    /// - closed: 常にtrueを返す
-    /// - halfOpen: 常にtrueを返す
-    /// - open: resetTimeout経過後にhalfOpenに遷移してtrueを返す、未経過ならfalseを返す
+    /// Not a pure query — calling it is what ends the open period. `false` is the only
+    /// answer that blocks anything, and it comes only from an open breaker whose timeout
+    /// has not yet elapsed.
     public func requestExecution() -> Bool {
         switch state {
         case .closed:
@@ -151,13 +176,16 @@ public actor CircuitBreaker {
         }
     }
 
-    /// 成功を記録
+    /// Clears the failure count and closes the breaker, whatever state it was in.
     public func recordSuccess() {
         failureCount = 0
         state = .closed
     }
 
-    /// 失敗を記録
+    /// Counts a failure and opens the breaker once the threshold is reached.
+    ///
+    /// The count keeps rising past the threshold, so a breaker that has failed many times
+    /// still reopens on a single failure after one success — the count is reset, not the history.
     public func recordFailure() {
         failureCount += 1
         lastFailureTime = .now
@@ -169,7 +197,15 @@ public actor CircuitBreaker {
 
 // MARK: - SearchResultCache
 
-/// LRU + TTL キャッシュ
+/// Caches search results by query, bounded by entry count and by age.
+///
+/// The key is the exact query string paired with `maxResults`, so nothing is normalised:
+/// `"swift"` and `"Swift"` are different entries, and asking for 5 results does not hit an
+/// entry stored for 10.
+///
+/// Capacity is enforced on insert by evicting the least recently used entry, so the actor
+/// never grows past `maxEntries`. Expiry is enforced on read only — a stale entry is
+/// reported as a miss but stays in the cache, holding a slot until something evicts it.
 public actor SearchResultCache {
     private struct CacheEntry {
         let results: [WebSearchResult]
@@ -186,22 +222,24 @@ public actor SearchResultCache {
     private var cache: [CacheKey: CacheEntry] = [:]
     private var accessOrder: [CacheKey] = []
 
-    /// SearchResultCacheを作成
+    /// Creates an empty cache.
     ///
     /// - Parameters:
-    ///   - ttl: エントリの有効期限（秒）
-    ///   - maxEntries: 最大エントリ数
+    ///   - ttl: Seconds an entry stays valid, measured from when it was stored.
+    ///   - maxEntries: Hard capacity. Nothing checks it for sanity, so `0` evicts on every insert.
     public init(ttl: TimeInterval, maxEntries: Int) {
         self.ttl = ttl
         self.maxEntries = maxEntries
     }
 
-    /// キャッシュを参照
+    /// Looks up a cached result, treating an expired entry as a miss.
+    ///
+    /// A hit refreshes the entry's position in the eviction order; a miss on an expired
+    /// entry does not remove it.
     ///
     /// - Parameters:
-    ///   - query: 検索クエリ
-    ///   - maxResults: 最大結果数
-    /// - Returns: キャッシュヒットした結果、またはnil
+    ///   - query: The exact query string used when the entry was stored.
+    ///   - maxResults: The exact result count used when the entry was stored.
     public func get(query: String, maxResults: Int) -> [WebSearchResult]? {
         let key = CacheKey(query: query, maxResults: maxResults)
         guard let entry = cache[key] else { return nil }
@@ -209,10 +247,10 @@ public actor SearchResultCache {
         let elapsed = ContinuousClock.Instant.now - entry.timestamp
         let elapsedSeconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
         if elapsedSeconds > ttl {
-            return nil // Expired
+            return nil  // Expired. Left in place; capacity reclaims it later.
         }
 
-        // Move to end of access order (LRU)
+        // Most recently used goes last, so evictOldest takes from the front.
         if let index = accessOrder.firstIndex(of: key) {
             accessOrder.remove(at: index)
             accessOrder.append(key)
@@ -221,40 +259,43 @@ public actor SearchResultCache {
         return entry.results
     }
 
-    /// キャッシュに保存
+    /// Stores a result, evicting the least recently used entry first if the cache is full.
+    ///
+    /// Overwriting an existing key restarts its TTL and evicts nothing.
     ///
     /// - Parameters:
-    ///   - results: 検索結果
-    ///   - query: 検索クエリ
-    ///   - maxResults: 最大結果数
+    ///   - results: Results to cache. An empty array is cached like any other value, so a
+    ///     query that legitimately found nothing is not retried until the TTL expires.
+    ///   - query: Query string, used verbatim as part of the key.
+    ///   - maxResults: Result count, used as part of the key.
     public func set(_ results: [WebSearchResult], query: String, maxResults: Int) {
         let key = CacheKey(query: query, maxResults: maxResults)
 
-        // Evict LRU if at capacity
+        // Only a new key can push the count over capacity.
         if cache[key] == nil && cache.count >= maxEntries {
             evictOldest()
         }
 
         cache[key] = CacheEntry(results: results, timestamp: .now)
 
-        // Update access order
         if let index = accessOrder.firstIndex(of: key) {
             accessOrder.remove(at: index)
         }
         accessOrder.append(key)
     }
 
-    /// キャッシュをクリア
+    /// Empties the cache.
     public func clear() {
         cache.removeAll()
         accessOrder.removeAll()
     }
 
-    /// 現在のエントリ数
+    /// Stored entries, including expired ones that have not yet been evicted.
     public var count: Int {
         cache.count
     }
 
+    /// Drops the least recently used entry, expired or not.
     private func evictOldest() {
         guard let oldest = accessOrder.first else { return }
         accessOrder.removeFirst()
@@ -264,9 +305,22 @@ public actor SearchResultCache {
 
 // MARK: - ResilientSearchProvider
 
-/// レジリエンス機能を統合した検索プロバイダーラッパー
+/// Wraps a search provider with a cache, a circuit breaker, a rate limiter and retries.
 ///
-/// キャッシュ → レート制限 → サーキットブレーカー → リトライの順で実行する。
+/// A search runs through them in this order: cache lookup, circuit-breaker admission, then
+/// an attempt loop where each attempt waits on the rate limiter and, from the second
+/// attempt on, first backs off exponentially from 500 ms.
+///
+/// Two consequences worth knowing before relying on it:
+///
+/// - **Every error is retried.** Nothing distinguishes a timeout from a rejected API key,
+///   so a permanently broken credential is re-sent on every attempt.
+/// - **Each failed attempt counts separately against the circuit breaker.** With the
+///   defaults — two attempts, threshold five — three consecutive failing searches open the
+///   circuit, not five.
+///
+/// The breaker is consulted once, before the loop, so retries continue even if it opens
+/// partway through. Only successes are cached; failures are not.
 public final class ResilientSearchProvider: WebSearchProvider, Sendable {
     private let provider: any WebSearchProvider
     private let rateLimiter: RateLimiter
@@ -274,11 +328,12 @@ public final class ResilientSearchProvider: WebSearchProvider, Sendable {
     private let cache: SearchResultCache
     private let maxRetries: Int
 
-    /// ResilientSearchProviderを作成
+    /// Wraps a provider. The cache, limiter and breaker belong to this instance alone, so
+    /// two wrappers around the same provider do not share state.
     ///
     /// - Parameters:
-    ///   - provider: ラップする検索プロバイダー
-    ///   - configuration: レジリエンス設定
+    ///   - provider: The provider that performs the actual search.
+    ///   - configuration: Tuning for all four mechanisms.
     public init(provider: any WebSearchProvider, configuration: SearchResilienceConfiguration = .default) {
         self.provider = provider
         self.rateLimiter = RateLimiter(maxRequestsPerSecond: configuration.maxRequestsPerSecond)
@@ -290,23 +345,26 @@ public final class ResilientSearchProvider: WebSearchProvider, Sendable {
         self.maxRetries = configuration.maxRetries
     }
 
+    /// Searches, serving a cached result if one is valid.
+    ///
+    /// - Throws: ``WebSearchError/circuitBreakerOpen`` when the breaker is open, otherwise
+    ///   the error from the final attempt.
     public func search(query: String, maxResults: Int) async throws -> [WebSearchResult] {
-        // 1. Check cache
         if let cached = await cache.get(query: query, maxResults: maxResults) {
             return cached
         }
 
-        // 2. Request execution from circuit breaker (includes state transition)
+        // Checked once. An open breaker fails fast; a half-open one lets this through as a trial.
         let canExecute = await circuitBreaker.requestExecution()
         guard canExecute else {
             throw WebSearchError.circuitBreakerOpen
         }
 
-        // 3. Rate limiting + retry
         var lastError: Error?
         for attempt in 0...maxRetries {
             if attempt > 0 {
-                // Exponential backoff for retries
+                // 500 ms, 1 s, 2 s, ... Cancellation during the backoff is swallowed and the
+                // attempt proceeds.
                 try? await Task.sleep(for: .milliseconds(500 * (1 << (attempt - 1))))
             }
 

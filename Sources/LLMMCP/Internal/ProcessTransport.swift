@@ -3,11 +3,13 @@ import Foundation
 import Logging
 import MCP
 
-/// 外部プロセスを起動してstdin/stdout経由で通信するトランスポート
+/// Launches an MCP server as a child process and speaks newline-delimited JSON-RPC over its pipes.
 ///
-/// MCP サーバープロセスを起動し、JSON-RPC 通信を行う。
-/// SDK の `StdioTransport` とは異なり、このトランスポートは
-/// 外部プロセスを起動する側として動作する。
+/// The SDK's own `StdioTransport` is the server side of this arrangement — it talks over the
+/// current process's stdin and stdout. This one is the client side: it owns the child.
+///
+/// The child's stderr is drained into the logger, which matters because a server that writes
+/// diagnostics to stderr would otherwise fill its pipe buffer and deadlock.
 internal actor ProcessTransport: Transport {
     // MARK: - ConnectionState
 
@@ -37,13 +39,14 @@ internal actor ProcessTransport: Transport {
 
     // MARK: - Initialization
 
-    /// ProcessTransportを作成
+    /// Records what to launch. Nothing runs until ``connect()``.
     ///
     /// - Parameters:
-    ///   - command: 実行するコマンドのパス
-    ///   - arguments: コマンド引数
-    ///   - environment: 追加の環境変数
-    ///   - logger: ロガー
+    ///   - command: Absolute path to the executable. Not resolved through `PATH`.
+    ///   - arguments: Arguments for it.
+    ///   - environment: Variables layered over the parent process environment.
+    ///   - logger: Where the child's stderr goes. Defaults to a no-op handler, which
+    ///     discards every diagnostic the server writes.
     init(
         command: String,
         arguments: [String] = [],
@@ -58,7 +61,8 @@ internal actor ProcessTransport: Transport {
             factory: { _ in SwiftLogNoOpLogHandler() }
         )
 
-        // メッセージストリームを作成
+        // The stream is created once and never replaced, so a transport that has been
+        // disconnected cannot be reconnected: its continuation is already finished.
         var continuation: AsyncThrowingStream<Data, Swift.Error>.Continuation!
         self.messageStream = AsyncThrowingStream { continuation = $0 }
         self.messageContinuation = continuation
@@ -66,7 +70,12 @@ internal actor ProcessTransport: Transport {
 
     // MARK: - Transport Protocol
 
-    /// プロセスを起動して接続を確立
+    /// Starts the child process and the two tasks that drain its stdout and stderr.
+    ///
+    /// Returns as soon as the process is spawned; a server that exits immediately shows up
+    /// later as end-of-stream rather than as an error here. Calling it while connected does nothing.
+    ///
+    /// - Throws: `MCPError.transportError` when the executable cannot be launched.
     public func connect() async throws {
         guard case .disconnected = state else { return }
 
@@ -75,12 +84,10 @@ internal actor ProcessTransport: Transport {
             "arguments": "\(arguments)"
         ])
 
-        // パイプを作成
         let stdinPipe = Pipe()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
 
-        // プロセスを設定
         let process = Process()
         process.executableURL = URL(fileURLWithPath: command)
         process.arguments = arguments
@@ -88,14 +95,14 @@ internal actor ProcessTransport: Transport {
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
 
-        // 環境変数を設定
+        // Inherit the parent environment, then layer the overrides on top. The child sees
+        // every variable this process has, including any credentials in it.
         var processEnvironment = ProcessInfo.processInfo.environment
         for (key, value) in environment {
             processEnvironment[key] = value
         }
         process.environment = processEnvironment
 
-        // プロセスを起動
         do {
             try process.run()
             logger.debug("MCP server process started", metadata: ["pid": "\(process.processIdentifier)"])
@@ -104,7 +111,7 @@ internal actor ProcessTransport: Transport {
             throw MCP.MCPError.transportError(error)
         }
 
-        // Taskを作成（状態に格納）
+        // Held in the state so disconnect can cancel them.
         let readLoopTask = Task {
             await readLoop()
         }
@@ -123,7 +130,14 @@ internal actor ProcessTransport: Transport {
         )
     }
 
-    /// 接続を切断してプロセスを終了
+    /// Cancels the reader tasks, closes the pipes and asks the child to stop.
+    ///
+    /// The child gets SIGTERM, then SIGINT 100 ms later if it is still alive. Neither can be
+    /// ignored-proofed — a process that traps both survives this call, and nothing waits for
+    /// it to exit, so `disconnect()` can return while the child is still running.
+    ///
+    /// This is one-way. The message stream is finished here and never restarted, so the
+    /// transport cannot be reconnected afterwards.
     public func disconnect() async {
         guard case .connected(let process, let stdin, let stdout, let stderr, let readLoopTask, let stderrTask) = state else {
             return
@@ -131,22 +145,19 @@ internal actor ProcessTransport: Transport {
 
         logger.debug("Disconnecting MCP server process")
 
-        // Taskをキャンセル
         readLoopTask.cancel()
         stderrTask.cancel()
 
-        // ストリームを終了
         messageContinuation.finish()
 
-        // パイプを閉じる
         stdin.fileHandleForWriting.closeFile()
         stdout.fileHandleForReading.closeFile()
         stderr.fileHandleForReading.closeFile()
 
-        // プロセスを終了
         if process.isRunning {
             process.terminate()
-            // 少し待ってからkill
+            // Give it a moment, then escalate to SIGINT. This is not SIGKILL, so a process
+            // that traps both signals keeps running.
             try? await Task.sleep(for: .milliseconds(100))
             if process.isRunning {
                 process.interrupt()
@@ -158,13 +169,18 @@ internal actor ProcessTransport: Transport {
         logger.debug("MCP server process disconnected")
     }
 
-    /// データを送信
+    /// Writes one JSON-RPC message to the child's stdin, terminated by a newline.
+    ///
+    /// The write is synchronous and blocks the actor if the child stops reading its stdin.
+    ///
+    /// - Throws: `MCPError.internalError` when not connected, `MCPError.transportError`
+    ///   when the write fails — which is how a child that has already exited is noticed.
     public func send(_ data: Data) async throws {
         guard case .connected(_, let stdin, _, _, _, _) = state else {
             throw MCP.MCPError.internalError("Transport not connected")
         }
 
-        // 改行を追加してJSON-RPCメッセージを区切る
+        // Newline-delimited framing: the message must not contain a bare newline itself.
         var messageData = data
         messageData.append(UInt8(ascii: "\n"))
 
@@ -178,14 +194,21 @@ internal actor ProcessTransport: Transport {
         }
     }
 
-    /// 受信メッセージのストリームを取得
+    /// The stream of messages read from the child's stdout, one element per line.
+    ///
+    /// A single shared stream, so only one consumer receives each message. It finishes on
+    /// disconnect or on end-of-stream from the child, and cannot be restarted.
     public func receive() -> AsyncThrowingStream<Data, Swift.Error> {
         return messageStream
     }
 
     // MARK: - Private Methods
 
-    /// stdoutからメッセージを読み取るループ
+    /// Reads the child's stdout and yields one message per newline until cancelled or EOF.
+    ///
+    /// The pending buffer is unbounded: a server that writes without ever emitting a newline
+    /// grows it until memory runs out. Cancellation is only observed between reads, so a
+    /// child that goes quiet leaves this parked in a read.
     private func readLoop() async {
         guard case .connected(_, _, let stdout, _, _, _) = state else { return }
 
@@ -194,9 +217,9 @@ internal actor ProcessTransport: Transport {
 
         while !Task.isCancelled {
             do {
-                // availableDataを使用して非同期的に読み取る
+                // availableData blocks, so it runs off the cooperative pool and the result
+                // is bridged back through a continuation.
                 let data = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-                    // FileHandleの読み取りをバックグラウンドで実行
                     DispatchQueue.global().async {
                         let data = fileHandle.availableData
                         continuation.resume(returning: data)
@@ -204,14 +227,14 @@ internal actor ProcessTransport: Transport {
                 }
 
                 if data.isEmpty {
-                    // EOF - プロセスが終了
+                    // Empty read means EOF: the server process has exited.
                     logger.notice("EOF received from MCP server process")
                     break
                 }
 
                 pendingData.append(data)
 
-                // 改行で区切られた完全なメッセージを処理
+                // Drain every complete line; whatever is left stays buffered for the next read.
                 while let newlineIndex = pendingData.firstIndex(of: UInt8(ascii: "\n")) {
                     let messageData = pendingData[..<newlineIndex]
                     pendingData = pendingData[(newlineIndex + 1)...]
@@ -232,7 +255,11 @@ internal actor ProcessTransport: Transport {
         messageContinuation.finish()
     }
 
-    /// stderrを監視してログに出力
+    /// Drains the child's stderr into the logger until cancelled or EOF.
+    ///
+    /// Draining is what matters: an undrained stderr pipe fills and blocks the child. The
+    /// read is synchronous, so this holds a thread and only notices cancellation once a
+    /// read returns.
     private func monitorStderr() async {
         guard case .connected(_, _, _, let stderr, _, _) = state else { return }
 

@@ -8,7 +8,7 @@ import LLMTool
 @Suite("FileSystemToolKit Safety")
 struct FileSystemToolKitSafetyTests {
 
-    /// テスト用の一時ディレクトリとツールキットを作成
+    /// Makes a throwaway directory and a tool kit confined to it.
     private func makeSUT() -> (toolkit: FileSystemToolKit, tempDir: String, cleanup: @Sendable () -> Void) {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("fs-safety-test-\(UUID().uuidString)")
@@ -21,7 +21,7 @@ struct FileSystemToolKitSafetyTests {
         return (toolkit, tempDir, cleanup)
     }
 
-    /// JSON データを作成するヘルパー
+    /// Encodes tool arguments the way a model would send them.
     private func jsonData(_ dict: [String: Any]) -> Data {
         try! JSONSerialization.data(withJSONObject: dict)
     }
@@ -46,18 +46,18 @@ struct FileSystemToolKitSafetyTests {
         let (toolkit, tempDir, cleanup) = makeSUT()
         defer { cleanup() }
 
-        // 既存ファイルを直接作成
+        // Create the file behind the tool kit, so it has never been read.
         let path = (tempDir as NSString).appendingPathComponent("existing.txt")
         try "original".write(toFile: path, atomically: true, encoding: .utf8)
 
-        // read なしで write → エラー
+        // Writing without a prior read must fail.
         await #expect(throws: FileSystemToolKitError.self) {
             try await toolkit.tool(named: "write_file")!.execute(
                 with: jsonData(["path": path, "content": "overwritten"])
             )
         }
 
-        // ファイルが変更されていないことを確認
+        // The refusal must also have left the file untouched.
         let content = try String(contentsOfFile: path, encoding: .utf8)
         #expect(content == "original")
     }
@@ -69,12 +69,12 @@ struct FileSystemToolKitSafetyTests {
         let path = (tempDir as NSString).appendingPathComponent("existing.txt")
         try "original".write(toFile: path, atomically: true, encoding: .utf8)
 
-        // まず read
+        // Read first.
         _ = try await toolkit.tool(named: "read_file")!.execute(
             with: jsonData(["path": path])
         )
 
-        // read 後の write は成功
+        // Now the write is allowed.
         let result = try await toolkit.tool(named: "write_file")!.execute(
             with: jsonData(["path": path, "content": "updated"])
         )
@@ -93,14 +93,14 @@ struct FileSystemToolKitSafetyTests {
         let path = (tempDir as NSString).appendingPathComponent("edit-target.txt")
         try "hello world".write(toFile: path, atomically: true, encoding: .utf8)
 
-        // read なしで edit → エラー
+        // Editing without a prior read must fail, even though the file exists.
         await #expect(throws: FileSystemToolKitError.self) {
             try await toolkit.tool(named: "edit_file")!.execute(
                 with: jsonData(["path": path, "old_string": "hello", "new_string": "hi"])
             )
         }
 
-        // ファイルが変更されていないことを確認
+        // The refusal must also have left the file untouched.
         let content = try String(contentsOfFile: path, encoding: .utf8)
         #expect(content == "hello world")
     }
@@ -112,12 +112,12 @@ struct FileSystemToolKitSafetyTests {
         let path = (tempDir as NSString).appendingPathComponent("edit-target.txt")
         try "hello world".write(toFile: path, atomically: true, encoding: .utf8)
 
-        // まず read
+        // Read first.
         _ = try await toolkit.tool(named: "read_file")!.execute(
             with: jsonData(["path": path])
         )
 
-        // read 後の edit は成功
+        // Now the edit is allowed.
         let result = try await toolkit.tool(named: "edit_file")!.execute(
             with: jsonData(["path": path, "old_string": "hello", "new_string": "hi"])
         )
@@ -138,12 +138,12 @@ struct FileSystemToolKitSafetyTests {
         try "content1".write(toFile: path1, atomically: true, encoding: .utf8)
         try "content2".write(toFile: path2, atomically: true, encoding: .utf8)
 
-        // read_multiple_files で両方読む
+        // One batch read should mark every file it succeeded on.
         _ = try await toolkit.tool(named: "read_multiple_files")!.execute(
             with: jsonData(["paths": [path1, path2]])
         )
 
-        // 両方のファイルに write できる
+        // So both are now writable.
         let result1 = try await toolkit.tool(named: "write_file")!.execute(
             with: jsonData(["path": path1, "content": "updated1"])
         )
@@ -164,7 +164,7 @@ struct FileSystemToolKitSafetyTests {
         let path = (tempDir as NSString).appendingPathComponent("persist.txt")
         try "original".write(toFile: path, atomically: true, encoding: .utf8)
 
-        // read → write → 再 write（re-read 不要）
+        // A second write needs no second read: the mark persists for the session.
         _ = try await toolkit.tool(named: "read_file")!.execute(
             with: jsonData(["path": path])
         )

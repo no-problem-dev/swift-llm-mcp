@@ -4,23 +4,30 @@ import LLMTool
 
 // MARK: - web-fetch-probe entry point
 //
-// swift-llm-mcp の WebToolKit.fetch を実ネットワークに対して走らせ、
-// 100 件規模の多様な URL がどの層で・どんな理由で失敗するかを分類して
-// Markdown + JSON レポートを生成する計測ハーネス。
+// Runs WebToolKit.fetch against the real network over a corpus of roughly 100 varied URLs,
+// classifies where and why each one fails, and writes a Markdown and JSON report.
 //
-// 使い方:
-//   swift run web-fetch-probe                  # 全コーパス、デフォルト設定
+// This talks to live sites, so results move with the internet: some failures are real
+// regressions and some are a site changing its mind. That is what the diff subcommand and
+// PROBE_BASELINE are for — a run is only meaningful against another run.
+//
+// Usage:
+//   swift run web-fetch-probe                  # whole corpus, defaults
 //   PROBE_TIMEOUT=15 PROBE_CONCURRENCY=8 swift run web-fetch-probe
-//   PROBE_LIMIT=10 swift run web-fetch-probe   # 先頭 N 件だけ（動作確認用）
+//   PROBE_LIMIT=10 swift run web-fetch-probe   # first N entries, for a smoke test
+//
+// Reports are written relative to the current working directory, not the package, so run
+// this from the package root.
 
 func env(_ key: String) -> String? { ProcessInfo.processInfo.environment[key] }
 
 let reportsDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     .appendingPathComponent("reports")
 
-// MARK: - diff サブコマンド
+// MARK: - diff subcommand
 //   swift run web-fetch-probe diff <before.json> <after.json>
-// ネットワークを叩かず、既存 2 レポートの差分のみ出力する回帰ゲート。
+// The regression gate. Compares two existing reports without touching the network, so it is
+// fast and repeatable.
 let argv = Array(CommandLine.arguments.dropFirst())
 if argv.first == "diff" {
     guard argv.count >= 3 else {
@@ -42,9 +49,10 @@ if argv.first == "diff" {
     exit(0)
 }
 
-// MARK: - inspect サブコマンド
+// MARK: - inspect subcommand
 //   swift run web-fetch-probe inspect <url>
-// 単一 URL の抽出結果（全文）をファイルにダンプし、品質を目視確認する。
+// Dumps one URL's full extraction to reports/inspect.json so the output can be read by eye.
+// Overwrites that file on every call.
 if argv.first == "inspect" {
     guard argv.count >= 2 else {
         FileHandle.standardError.write("usage: web-fetch-probe inspect <url>\n".data(using: .utf8)!)
@@ -75,7 +83,7 @@ let limit = env("PROBE_LIMIT").flatMap(Int.init)
 var entries = Corpus.entries
 if let limit { entries = Array(entries.prefix(limit)) }
 
-// タイムスタンプは外部から渡す（Date() を使うが executable なので問題なし）
+// One timestamp for the whole run, so the JSON and Markdown reports share a filename stem.
 let formatter = DateFormatter()
 formatter.dateFormat = "yyyyMMdd-HHmmss"
 let timestamp = formatter.string(from: Date())
@@ -89,7 +97,7 @@ FileHandle.standardError.write("""
 let runner = ProbeRunner(timeout: timeout, maxConcurrency: concurrency)
 let results = await runner.run(entries)
 
-// レポート出力先: パッケージ直下の reports/
+// Reports land in ./reports, which is created if it does not exist.
 do {
     try ReportWriter.write(results, to: reportsDir, timestamp: timestamp)
 } catch {
@@ -97,7 +105,8 @@ do {
     exit(1)
 }
 
-// PROBE_BASELINE が指定されていれば、今回の結果と自動 diff（回帰ゲート）
+// With PROBE_BASELINE set, diff this run against it automatically. A failed diff is
+// reported on stderr but does not fail the run — the reports are already written.
 if let baseline = env("PROBE_BASELINE") {
     let currentJSON = reportsDir.appendingPathComponent("web-fetch-probe-\(timestamp).json").path
     if let md = try? ReportDiff.diffMarkdown(beforePath: baseline, afterPath: currentJSON) {
@@ -109,7 +118,8 @@ if let baseline = env("PROBE_BASELINE") {
     }
 }
 
-// コンソールにも要約を出す
+// Summary on stdout. Note that the exit status is 0 regardless of how many URLs failed;
+// the regression gate is the diff, not this run.
 let ok = results.filter { $0.layer == .ok }.count
 let thin = results.filter { $0.layer == .okThinContent }.count
 let fail = results.count - ok - thin

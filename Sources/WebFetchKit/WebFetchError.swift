@@ -2,10 +2,11 @@ import Foundation
 
 // MARK: - WebFetchError
 
-/// WebFetchEngine が投げるエラー。
+/// Every failure ``WebFetchEngine`` reports.
 ///
-/// （旧 `WebToolKitError`。WebFetchKit 分離に伴いリネーム。）
-/// errorDescription は LLM 向けに「次に取るべき行動」を含むメッセージにしている。
+/// The `errorDescription` of each case is written for an LLM reading a tool result: it
+/// names the next action to take ("try a different source", "use web_search"), because the
+/// caller is usually an agent deciding what to do next rather than a human reading a log.
 public enum WebFetchError: Error, LocalizedError {
     case invalidURL(String)
     case unsupportedScheme(String)

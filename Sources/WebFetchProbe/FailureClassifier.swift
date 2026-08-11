@@ -7,28 +7,30 @@ import FoundationNetworking
 
 // MARK: - FailureLayer
 
-/// fetch パイプラインの「どの層で・どう終わったか」を表す分類。
-/// WebToolKit.fetch の処理順（URL検証 → ネットワーク → HTTP → サイズ →
-/// エンコーディング → 本文抽出）に対応する。
+/// Where in the fetch pipeline a probe ended up.
+///
+/// The cases follow the order `fetch` does its work — URL validation, network, HTTP, size,
+/// encoding, extraction — so a distribution over these values points at the layer to fix.
 enum FailureLayer: String, Codable, CaseIterable {
-    case ok                       // 本文抽出に成功
-    case okThinContent            // 2xx だが抽出本文が極端に短い（SPA/paywall 疑い）
-    case urlValidation            // ① URL 検証で reject
-    case networkTimeout           // ② タイムアウト
-    case networkDNS               // ② DNS 解決失敗
-    case networkTLS               // ② TLS / 証明書エラー
-    case networkOther             // ② その他の接続エラー
-    case httpClientError          // ③ 4xx（403/401/404/429 含む）
-    case httpServerError          // ③ 5xx
-    case challengeBlocked         // ③' bot チャレンジ/JS必須 interstitial
-    case contentTooLarge          // ④ バイナリ/サイズ超過
-    case encoding                 // ⑤ デコード不能
-    case extraction               // ⑥ SwiftSoup 抽出失敗
-    case unknown                  // 未分類
+    case ok                       // Content extracted.
+    case okThinContent            // 2xx, but the extracted text is very short: likely an SPA or paywall.
+    case urlValidation            // 1. Rejected before any request was made.
+    case networkTimeout           // 2. Timed out.
+    case networkDNS               // 2. Host could not be resolved.
+    case networkTLS               // 2. TLS or certificate failure.
+    case networkOther             // 2. Any other connection failure.
+    case httpClientError          // 3. 4xx, including 401, 403, 404 and 429.
+    case httpServerError          // 3. 5xx.
+    case challengeBlocked         // 3. A 200 carrying a bot challenge or JavaScript-required page.
+    case contentTooLarge          // 4. Binary content type, or over the size cap.
+    case encoding                 // 5. No candidate charset decoded the body.
+    case extraction               // 6. Parsing the HTML failed.
+    case unknown                  // Nothing matched; a gap in the classifier.
 
+    /// True for everything except ``ok``, so ``okThinContent`` counts as a failure here.
     var isFailure: Bool { self != .ok }
 
-    /// 人間向けの短い説明
+    /// Short human-readable name for the report. Currently Japanese.
     var label: String {
         switch self {
         case .ok: return "成功"
@@ -51,13 +53,18 @@ enum FailureLayer: String, Codable, CaseIterable {
 
 // MARK: - Classifier
 
+/// Sorts a thrown error into the pipeline layer that produced it.
 enum FailureClassifier {
-    /// 抽出本文がこの文字数未満なら「本文薄い」とみなす閾値。
+    /// Extraction shorter than this counts as ``FailureLayer/okThinContent``.
     static let thinContentThreshold = 200
 
-    /// 投げられたエラーを ``FailureLayer`` に分類する。
+    /// Classifies an error, returning the layer and a detail string for the report.
+    ///
+    /// Falls back to ``FailureLayer/unknown`` with the error's type name rather than
+    /// discarding it, so an unclassified failure is visible in the report as a gap here
+    /// rather than as a mystery.
     static func classify(error: Error) -> (layer: FailureLayer, detail: String) {
-        // ① / ③ / ④ / ⑤: WebFetchEngine 自身のエラー
+        // Errors WebFetchEngine raises itself: validation, HTTP, size and encoding.
         if let e = error as? WebFetchError {
             switch e {
             case .invalidURL(let u):
@@ -86,7 +93,7 @@ enum FailureClassifier {
             }
         }
 
-        // ② ネットワーク層: transport は URLError を TransportError.network でラップ
+        // Network layer. The transport wraps URLError in TransportError.network.
         if let t = error as? TransportError {
             switch t {
             case .network(let underlying):
@@ -98,12 +105,12 @@ enum FailureClassifier {
             }
         }
 
-        // 念のため URLError が直接来た場合も拾う
+        // Also handle an unwrapped URLError, in case a transport does not wrap it.
         if let urlError = error as? URLError {
             return classifyNetwork(urlError)
         }
 
-        // ⑥ SwiftSoup 抽出失敗など（型は LLMMCP 内 private のため文字列で判定）
+        // Extraction failures are matched by type name, because the error type is not public.
         let desc = String(describing: type(of: error))
         if desc.contains("Extractor") || desc.contains("SwiftSoup") {
             return (.extraction, "\(desc): \(error.localizedDescription)")
@@ -112,6 +119,8 @@ enum FailureClassifier {
         return (.unknown, "\(desc): \(error.localizedDescription)")
     }
 
+    /// Splits a `URLError` into timeout, DNS, TLS or other. Anything else becomes
+    /// ``FailureLayer/networkOther`` with its numeric code, so unhandled codes stay visible.
     private static func classifyNetwork(_ error: Error) -> (layer: FailureLayer, detail: String) {
         guard let urlError = error as? URLError else {
             return (.networkOther, error.localizedDescription)

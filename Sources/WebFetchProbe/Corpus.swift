@@ -2,11 +2,9 @@ import Foundation
 
 // MARK: - Corpus
 
-/// Web フェッチツールの安定性を計測するための静的 URL コーパス。
+/// What kind of page a corpus entry is, used to group the report.
 ///
-/// 各エントリは「カテゴリ」と「期待される結末」を持つ。期待結末と実際の
-/// 分類結果を突き合わせることで、ツールが仕様通りに振る舞ったか／想定外の
-/// 壊れ方をしたかを機械判定できる。
+/// Raw values are Japanese and appear as headings in the generated Markdown.
 enum ProbeCategory: String, CaseIterable, Codable {
     case staticContent = "静的コンテンツ/Wiki"
     case news = "ニュース大手"
@@ -20,7 +18,7 @@ enum ProbeCategory: String, CaseIterable, Codable {
     case redirect = "リダイレクト/短縮URL"
     case largePage = "巨大ページ"
     case negativeControl = "陰性対照(404/不正)"
-    // 拡張カテゴリ
+    // Added later to widen coverage beyond the original twelve.
     case japaneseNews = "日系ニュース/メディア"
     case japaneseEC = "日系EC/サービス"
     case japaneseGov = "日系 政府/公共/金融"
@@ -33,38 +31,47 @@ enum ProbeCategory: String, CaseIterable, Codable {
     case paywall = "ペイウォール/ブログ基盤"
 }
 
-/// このコーパス内で「成功すべき/失敗すべき」の事前期待。
-/// classifier が出す ``FailureLayer`` と突き合わせる。
+/// What a corpus entry is expected to do, checked against the ``FailureLayer`` the
+/// classifier produces.
+///
+/// These are predictions about live sites, so they age. A mismatch means either the code
+/// changed or the site did — the report says which entry, not which cause.
 enum ExpectedOutcome: String, Codable {
-    /// 本文が抽出できて成功するべき
+    /// Should extract readable content.
     case readableSuccess
-    /// 2xx だが本文が薄い可能性が高い（SPA / paywall）。劣化検出の対象
+    /// Should return 2xx but little text, being an SPA or a paywall. Watched for degradation.
     case thinContentLikely
-    /// 4xx でブロックされる可能性（bot 検出 / paywall）
+    /// Likely blocked with a 4xx by bot detection or a paywall.
     case httpBlockedLikely
-    /// 404 など not found
+    /// Should be a 404.
     case notFound
-    /// DNS / 接続レベルの失敗
+    /// Should fail at DNS or connection level.
     case networkError
-    /// URL 検証で弾かれるべき
+    /// Should be rejected before any request is made.
     case invalidURL
-    /// バイナリで contentTooLarge になりうる
+    /// Binary, so it should be rejected on content type or size.
     case binaryLikely
-    /// JSON として取得できる（fetch でも raw テキストで返る）
+    /// Should fetch as JSON, which `fetch` returns as raw text.
     case jsonSuccess
 }
 
+/// One URL in the corpus, together with what it is and what it should do.
 struct CorpusEntry: Codable {
     let url: String
     let category: ProbeCategory
     let expected: ExpectedOutcome
-    /// 巨大ページ判定など補足メモ（任意）
+    /// Free-form note carried into the report, such as why an entry is here.
     var note: String? = nil
 }
 
+/// The fixed list of URLs every probe run fetches.
+///
+/// Hard-coded rather than loaded from a file so a run is reproducible from the source tree
+/// alone. Entries point at live sites, which will drift; expect to re-check
+/// ``ExpectedOutcome`` values periodically rather than treating a mismatch as a code defect.
 enum Corpus {
     static let entries: [CorpusEntry] = [
-        // MARK: 静的コンテンツ / Wiki (ベースライン: 成功すべき)
+        // MARK: Static content and wikis. The baseline: these must succeed.
         .init(url: "https://en.wikipedia.org/wiki/Swift_(programming_language)", category: .staticContent, expected: .readableSuccess),
         .init(url: "https://ja.wikipedia.org/wiki/Swift_(プログラミング言語)", category: .staticContent, expected: .readableSuccess),
         .init(url: "https://developer.mozilla.org/en-US/docs/Web/HTTP", category: .staticContent, expected: .readableSuccess),
@@ -76,7 +83,7 @@ enum Corpus {
         .init(url: "https://blog.codinghorror.com", category: .staticContent, expected: .readableSuccess),
         .init(url: "https://www.paulgraham.com/greatwork.html", category: .staticContent, expected: .readableSuccess, note: "minimal markup"),
 
-        // MARK: ニュース大手 (paywall / bot ブロックが混在)
+        // MARK: Major news. A mix of paywalls and bot blocking.
         .init(url: "https://www.nytimes.com", category: .news, expected: .httpBlockedLikely),
         .init(url: "https://www.bbc.com/news", category: .news, expected: .readableSuccess),
         .init(url: "https://www.theguardian.com/international", category: .news, expected: .readableSuccess),
@@ -88,7 +95,7 @@ enum Corpus {
         .init(url: "https://arstechnica.com", category: .news, expected: .readableSuccess),
         .init(url: "https://www.wsj.com", category: .news, expected: .httpBlockedLikely),
 
-        // MARK: 公式ドキュメント
+        // MARK: Official documentation.
         .init(url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/", category: .officialDocs, expected: .readableSuccess),
         .init(url: "https://docs.python.org/3/tutorial/index.html", category: .officialDocs, expected: .readableSuccess),
         .init(url: "https://nodejs.org/api/fs.html", category: .officialDocs, expected: .readableSuccess, note: "large"),
@@ -108,7 +115,7 @@ enum Corpus {
         .init(url: "https://api.github.com/repos/apple/swift", category: .github, expected: .jsonSuccess),
         .init(url: "https://github.com/torvalds/linux/blob/master/MAINTAINERS", category: .github, expected: .readableSuccess, note: "very large file"),
 
-        // MARK: JSON API (公開・キー不要)
+        // MARK: Public JSON APIs, no key required.
         .init(url: "https://httpbin.org/json", category: .jsonAPI, expected: .jsonSuccess),
         .init(url: "https://api.github.com", category: .jsonAPI, expected: .jsonSuccess),
         .init(url: "https://jsonplaceholder.typicode.com/posts/1", category: .jsonAPI, expected: .jsonSuccess),
@@ -116,7 +123,7 @@ enum Corpus {
         .init(url: "https://catfact.ninja/fact", category: .jsonAPI, expected: .jsonSuccess),
         .init(url: "https://www.boredapi.com/api/activity", category: .jsonAPI, expected: .jsonSuccess),
 
-        // MARK: バイナリ (PDF / 画像 / 圧縮)
+        // MARK: Binary: PDF, images, archives.
         .init(url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", category: .binary, expected: .binaryLikely, note: "small PDF, P0-b で拒否されるべき"),
         .init(url: "https://www.orimi.com/pdf-test.pdf", category: .binary, expected: .binaryLikely),
         .init(url: "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg", category: .binary, expected: .binaryLikely, note: "large JPEG"),
@@ -126,7 +133,7 @@ enum Corpus {
         .init(url: "https://www.africau.edu/images/default/sample.pdf", category: .binary, expected: .binaryLikely, note: "tiny PDF, P0-b で拒否されるべき"),
         .init(url: "https://filesamples.com/samples/document/pdf/sample3.pdf", category: .binary, expected: .binaryLikely),
 
-        // MARK: SPA (JS 描画 → 2xx だが本文薄い可能性)
+        // MARK: Single-page apps. Rendered by JavaScript, so 2xx with little text.
         .init(url: "https://twitter.com/jack", category: .spa, expected: .thinContentLikely),
         .init(url: "https://x.com", category: .spa, expected: .thinContentLikely),
         .init(url: "https://www.instagram.com", category: .spa, expected: .thinContentLikely),
@@ -138,7 +145,7 @@ enum Corpus {
         .init(url: "https://discord.com", category: .spa, expected: .thinContentLikely),
         .init(url: "https://www.figma.com", category: .spa, expected: .thinContentLikely),
 
-        // MARK: Bot 保護 (Cloudflare / Akamai / PerimeterX)
+        // MARK: Bot protection: Cloudflare, Akamai, PerimeterX.
         .init(url: "https://www.cloudflare.com", category: .botProtected, expected: .readableSuccess, note: "CF own site usually OK"),
         .init(url: "https://www.g2.com", category: .botProtected, expected: .httpBlockedLikely),
         .init(url: "https://www.crunchbase.com", category: .botProtected, expected: .httpBlockedLikely),
@@ -148,7 +155,7 @@ enum Corpus {
         .init(url: "https://www.amazon.com", category: .botProtected, expected: .thinContentLikely),
         .init(url: "https://www.ticketmaster.com", category: .botProtected, expected: .httpBlockedLikely),
 
-        // MARK: 日本語サイト (encoding バリエーション)
+        // MARK: Japanese sites, chosen for their range of character encodings.
         .init(url: "https://www.aozora.gr.jp/cards/000148/files/773_14560.html", category: .japanese, expected: .readableSuccess, note: "Shift_JIS classic"),
         .init(url: "https://www.yahoo.co.jp", category: .japanese, expected: .readableSuccess),
         .init(url: "https://www.asahi.com", category: .japanese, expected: .thinContentLikely),
@@ -160,7 +167,7 @@ enum Corpus {
         .init(url: "https://www.aozora.gr.jp", category: .japanese, expected: .readableSuccess),
         .init(url: "https://dev.classmethod.jp", category: .japanese, expected: .readableSuccess),
 
-        // MARK: リダイレクト / 短縮 URL (URLSession 追従)
+        // MARK: Redirects and URL shorteners, which the transport follows.
         .init(url: "https://httpbin.org/redirect/3", category: .redirect, expected: .jsonSuccess, note: "3-hop redirect to /get"),
         .init(url: "https://httpbin.org/absolute-redirect/2", category: .redirect, expected: .jsonSuccess),
         .init(url: "https://bit.ly/3xExample", category: .redirect, expected: .notFound, note: "likely dead short link"),
@@ -168,13 +175,13 @@ enum Corpus {
         .init(url: "https://t.co/example", category: .redirect, expected: .notFound),
         .init(url: "https://httpbin.org/status/301", category: .redirect, expected: .notFound, note: "redirect to nowhere"),
 
-        // MARK: 巨大ページ (truncation 挙動)
+        // MARK: Very large pages, to exercise truncation.
         .init(url: "https://en.wikipedia.org/wiki/List_of_Unicode_characters", category: .largePage, expected: .readableSuccess, note: "huge table"),
         .init(url: "https://www.w3.org/TR/html52/", category: .largePage, expected: .readableSuccess, note: "huge spec single page"),
         .init(url: "https://html.spec.whatwg.org/", category: .largePage, expected: .binaryLikely, note: ">10MB single page → may exceed maxContentSize"),
         .init(url: "https://en.wikipedia.org/wiki/United_States", category: .largePage, expected: .readableSuccess),
 
-        // MARK: 陰性対照 (確実に失敗すべき)
+        // MARK: Negative controls. These must fail; a success here means the checks are broken.
         .init(url: "https://httpbin.org/status/404", category: .negativeControl, expected: .notFound),
         .init(url: "https://httpbin.org/status/403", category: .negativeControl, expected: .httpBlockedLikely),
         .init(url: "https://httpbin.org/status/500", category: .negativeControl, expected: .httpBlockedLikely, note: "5xx server error"),
@@ -186,7 +193,7 @@ enum Corpus {
         .init(url: "not-a-valid-url", category: .negativeControl, expected: .invalidURL),
         .init(url: "https://httpbin.org/delay/30", category: .negativeControl, expected: .networkError, note: "exceeds probe timeout → timed out"),
 
-        // MARK: 日系ニュース/メディア
+        // MARK: Japanese news and media.
         .init(url: "https://mainichi.jp", category: .japaneseNews, expected: .readableSuccess),
         .init(url: "https://www.yomiuri.co.jp", category: .japaneseNews, expected: .readableSuccess),
         .init(url: "https://www.sankei.com", category: .japaneseNews, expected: .readableSuccess),
@@ -198,7 +205,7 @@ enum Corpus {
         .init(url: "https://www.watch.impress.co.jp", category: .japaneseNews, expected: .readableSuccess),
         .init(url: "https://gigazine.net", category: .japaneseNews, expected: .readableSuccess),
 
-        // MARK: 日系EC/サービス
+        // MARK: Japanese commerce and services.
         .init(url: "https://www.amazon.co.jp", category: .japaneseEC, expected: .thinContentLikely),
         .init(url: "https://www.rakuten.co.jp", category: .japaneseEC, expected: .readableSuccess),
         .init(url: "https://shopping.yahoo.co.jp", category: .japaneseEC, expected: .readableSuccess),
@@ -210,7 +217,7 @@ enum Corpus {
         .init(url: "https://www.jalan.net", category: .japaneseEC, expected: .readableSuccess),
         .init(url: "https://suumo.jp", category: .japaneseEC, expected: .readableSuccess),
 
-        // MARK: 日系 政府/公共/金融
+        // MARK: Japanese government, public sector and finance.
         .init(url: "https://www.kantei.go.jp", category: .japaneseGov, expected: .readableSuccess, note: "首相官邸"),
         .init(url: "https://www.soumu.go.jp", category: .japaneseGov, expected: .readableSuccess, note: "総務省"),
         .init(url: "https://www.nta.go.jp", category: .japaneseGov, expected: .readableSuccess, note: "国税庁"),
@@ -220,7 +227,7 @@ enum Corpus {
         .init(url: "https://www.jpx.co.jp", category: .japaneseGov, expected: .readableSuccess, note: "東証"),
         .init(url: "https://www.e-stat.go.jp", category: .japaneseGov, expected: .thinContentLikely, note: "統計 SPA 疑い"),
 
-        // MARK: 日系 コミュニティ/ブログ/レシピ
+        // MARK: Japanese community sites, blogs and recipes.
         .init(url: "https://qiita.com/tags/swift", category: .japaneseCommunity, expected: .readableSuccess),
         .init(url: "https://note.com", category: .japaneseCommunity, expected: .thinContentLikely),
         .init(url: "https://connpass.com", category: .japaneseCommunity, expected: .readableSuccess),
@@ -234,7 +241,7 @@ enum Corpus {
         .init(url: "https://www.nintendo.co.jp", category: .japaneseCommunity, expected: .readableSuccess, note: "任天堂"),
         .init(url: "https://kakuyomu.jp", category: .japaneseCommunity, expected: .readableSuccess, note: "小説投稿"),
 
-        // MARK: RSS/Atom/XML フィード（非 HTML → 生テキスト返却）
+        // MARK: RSS, Atom and XML feeds. Not HTML, so these take the feed-rendering path.
         .init(url: "https://news.ycombinator.com/rss", category: .feedXML, expected: .readableSuccess, note: "RSS"),
         .init(url: "https://feeds.bbci.co.uk/news/rss.xml", category: .feedXML, expected: .readableSuccess, note: "RSS"),
         .init(url: "https://b.hatena.ne.jp/hotentry/it.rss", category: .feedXML, expected: .readableSuccess, note: "はてブ RSS"),
@@ -242,14 +249,14 @@ enum Corpus {
         .init(url: "https://zenn.dev/feed", category: .feedXML, expected: .readableSuccess, note: "Zenn RSS"),
         .init(url: "https://www.google.com/sitemap.xml", category: .feedXML, expected: .readableSuccess, note: "sitemap"),
 
-        // MARK: プレーンテキスト/RFC/設定
+        // MARK: Plain text: RFCs and configuration files.
         .init(url: "https://www.rfc-editor.org/rfc/rfc2616.txt", category: .plainText, expected: .readableSuccess, note: "RFC plain text large"),
         .init(url: "https://www.google.com/robots.txt", category: .plainText, expected: .readableSuccess),
         .init(url: "https://raw.githubusercontent.com/torvalds/linux/master/README", category: .plainText, expected: .readableSuccess),
         .init(url: "https://www.gnu.org/licenses/gpl-3.0.txt", category: .plainText, expected: .readableSuccess),
         .init(url: "https://raw.githubusercontent.com/apple/swift-evolution/main/proposals/0001-keywords-as-argument-labels.md", category: .plainText, expected: .readableSuccess, note: "raw markdown"),
 
-        // MARK: 多言語エンコーディング
+        // MARK: Non-UTF-8 encodings across several languages.
         .init(url: "https://www.people.com.cn", category: .i18nEncoding, expected: .readableSuccess, note: "中国語(GB2312/UTF-8)"),
         .init(url: "https://www.naver.com", category: .i18nEncoding, expected: .readableSuccess, note: "韓国語(EUC-KR/UTF-8)"),
         .init(url: "https://lenta.ru", category: .i18nEncoding, expected: .readableSuccess, note: "ロシア語 Cyrillic"),
@@ -259,7 +266,7 @@ enum Corpus {
         .init(url: "https://zh.wikipedia.org/wiki/Swift", category: .i18nEncoding, expected: .readableSuccess, note: "中国語 Wikipedia"),
         .init(url: "https://ko.wikipedia.org/wiki/스위프트_(프로그래밍_언어)", category: .i18nEncoding, expected: .readableSuccess, note: "韓国語 Wikipedia + 非ASCII URL"),
 
-        // MARK: 学術/フォーラム/Q&A
+        // MARK: Academic sites, forums and Q&A.
         .init(url: "https://arxiv.org/abs/1706.03762", category: .academicForum, expected: .readableSuccess, note: "Attention is all you need"),
         .init(url: "https://pubmed.ncbi.nlm.nih.gov/33024307/", category: .academicForum, expected: .readableSuccess),
         .init(url: "https://stackoverflow.com/questions/24002092/how-to-deal-with-swift", category: .academicForum, expected: .readableSuccess),
@@ -267,13 +274,13 @@ enum Corpus {
         .init(url: "https://www.reddit.com/r/swift", category: .academicForum, expected: .thinContentLikely, note: "new reddit SPA"),
         .init(url: "https://news.ycombinator.com/item?id=1", category: .academicForum, expected: .readableSuccess),
 
-        // MARK: DocC(Apple/Swift JS描画) — HTML vs JSON API
+        // MARK: DocC. The HTML is a JavaScript shell, so these exercise the render-JSON path.
         .init(url: "https://developer.apple.com/documentation/swiftui/view", category: .docc, expected: .thinContentLikely, note: "DocC HTML → og:desc のみ"),
         .init(url: "https://developer.apple.com/documentation/swiftui", category: .docc, expected: .thinContentLikely, note: "DocC HTML"),
         .init(url: "https://developer.apple.com/tutorials/data/documentation/swiftui/view.json", category: .docc, expected: .readableSuccess, note: "DocC JSON API(全文取得可)"),
         .init(url: "https://docs.swift.org/swift-book/data/documentation/the-swift-programming-language.json", category: .docc, expected: .readableSuccess, note: "Swift Book DocC JSON"),
 
-        // MARK: ペイウォール/ブログ基盤
+        // MARK: Paywalls and hosted blogging platforms.
         .init(url: "https://medium.com/@apple", category: .paywall, expected: .thinContentLikely, note: "Medium paywall/SPA"),
         .init(url: "https://dev.to", category: .paywall, expected: .readableSuccess),
         .init(url: "https://substack.com", category: .paywall, expected: .thinContentLikely),

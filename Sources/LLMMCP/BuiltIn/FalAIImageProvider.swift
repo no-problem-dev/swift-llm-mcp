@@ -7,10 +7,11 @@ import LLMClient
 
 // MARK: - FalAIImageProvider
 
-/// fal.ai FLUX.2 Schnell を使用した画像生成プロバイダー
+/// Generates images with fal.ai's FLUX.2 Schnell.
 ///
-/// fal.ai API キーが必要。
-/// `POST https://fal.run/fal-ai/flux/schnell` を直接呼び出す。
+/// The fastest of the three providers, and the only one that costs two round trips: fal.ai
+/// replies with a URL, which this then downloads. Calls
+/// `POST https://fal.run/fal-ai/flux/schnell` directly rather than through an SDK.
 public final class FalAIImageProvider: ImageGenerationProvider, @unchecked Sendable {
     // MARK: - Properties
 
@@ -20,12 +21,13 @@ public final class FalAIImageProvider: ImageGenerationProvider, @unchecked Senda
 
     // MARK: - Initialization
 
-    /// FalAIImageProvider を作成
+    /// Creates a provider, building a `URLSession`-backed transport unless one is supplied.
     ///
     /// - Parameters:
-    ///   - apiKey: fal.ai API キー
-    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 60）
-    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
+    ///   - apiKey: fal.ai API key, sent as `Authorization: Key ...`.
+    ///   - timeout: Per-request timeout in seconds. It applies to the generation request and
+    ///     to the image download separately, so a slow call can take twice this.
+    ///   - transport: Substitute one in tests to avoid real network calls.
     public init(apiKey: String, timeout: TimeInterval = 60, transport: (any HTTPTransport)? = nil) {
         self.apiKey = apiKey
         self.timeout = timeout
@@ -41,13 +43,20 @@ public final class FalAIImageProvider: ImageGenerationProvider, @unchecked Senda
 
     // MARK: - ImageGenerationProvider
 
-    /// 画像を生成
+    /// Generates one image and downloads it.
+    ///
+    /// Two requests: generation, then a GET of the URL fal.ai returns. That download URL is
+    /// not restricted to any host, and the whole image is held in memory with no size cap.
     ///
     /// - Parameters:
-    ///   - prompt: 画像生成プロンプト
-    ///   - size: 画像サイズ（square / landscape / portrait）
-    ///   - quality: 画像品質（standard / hd）
-    /// - Returns: 生成された画像データ
+    ///   - prompt: Description of the image. FLUX does not report prompt rewrites, so
+    ///     ``GeneratedImageData/revisedPrompt`` is always `nil` here.
+    ///   - size: 1024x1024, 1536x1024 or 1024x1536.
+    ///   - quality: Ignored. Schnell has a single quality tier.
+    /// - Throws: ``ImageGenerationToolError/httpError(statusCode:)`` for a failed generation,
+    ///   ``ImageGenerationToolError/imageDownloadFailed`` for a failed download, and
+    ///   ``ImageGenerationToolError/invalidResponse`` for an empty or malformed reply.
+    ///   Content-policy rejections are not distinguished from other 4xx failures.
     /// - Throws: ``ImageGenerationToolError``
     public func generateImage(prompt: String, size: ImageGenerationSize, quality: ImageGenerationQuality) async throws -> GeneratedImageData {
         let url = URL(string: "https://fal.run/fal-ai/flux/schnell")!

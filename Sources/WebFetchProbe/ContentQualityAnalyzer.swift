@@ -2,16 +2,17 @@ import Foundation
 
 // MARK: - NoiseSignal
 
-/// 抽出済み本文に含まれる「LLM トークンを浪費する余計なペイロード」の種別。
+/// A kind of payload that survives extraction and costs the LLM tokens for nothing.
 enum NoiseSignal: String, Codable, CaseIterable {
-    case base64DataURI      // data:...;base64,... の巨大インライン blob
-    case duplicateLines     // 同一行の3回以上の繰り返し（ナビ/リスト残骸）
-    case trackingURL        // utm_ / gclid / fbclid 等トラッキング付き長大 URL
-    case blankRuns          // 3連以上の空行
-    case boilerplate        // Cookie 同意 / 購読誘導 / SNS シェア等の定型文
-    case htmlResidue        // 抽出後に残った生 HTML タグ / CSS / JS
-    case linkDense          // テキストに対しリンク markup 比率が高い（メニュー残骸）
+    case base64DataURI      // A huge inline data:...;base64,... blob.
+    case duplicateLines     // The same line three or more times: leftover navigation or lists.
+    case trackingURL        // Long URLs carrying utm_, gclid, fbclid and friends.
+    case blankRuns          // Three or more consecutive newlines.
+    case boilerplate        // Cookie notices, subscription prompts, social share text.
+    case htmlResidue        // Raw HTML tags, CSS or JavaScript the extractor left behind.
+    case linkDense          // Link markup dominates the text: a menu that was not pruned.
 
+    /// Human-readable name for the report. Currently Japanese.
     var label: String {
         switch self {
         case .base64DataURI: return "base64インライン画像"
@@ -27,27 +28,41 @@ enum NoiseSignal: String, Codable, CaseIterable {
 
 // MARK: - NoiseReport
 
+/// What ``ContentQualityAnalyzer`` found in one page of extracted text.
+///
+/// The character counts are estimates of waste, not measurements. Signals overlap — a
+/// base64 blob inside a duplicated line is counted by both — so ``totalWastedChars`` can
+/// exceed the real figure and is only meaningful as a trend across runs.
 struct NoiseReport: Codable {
-    /// 検出シグナルごとの「無駄と推定される文字数」
+    /// Estimated wasted characters, keyed by ``NoiseSignal`` raw value.
     var wastedCharsBySignal: [String: Int] = [:]
-    /// 検出シグナルごとの出現件数
+    /// Occurrences, keyed by ``NoiseSignal`` raw value. Counts differ in meaning per signal:
+    /// matches for some, distinct offending lines for others.
     var countsBySignal: [String: Int] = [:]
-    /// 代表的な無駄スニペット（最大3件、レポート用）
+    /// Illustrative snippets for the report, at most one per signal that produces them.
     var samples: [String] = []
 
-    /// 全体の無駄文字数
+    /// Sum of the per-signal estimates, with the double counting described above.
     var totalWastedChars: Int { wastedCharsBySignal.values.reduce(0, +) }
 
-    /// 概算トークン（UTF-8 バイト ÷ 4 の粗い近似）
+    /// A rough token count: UTF-8 bytes divided by four.
+    ///
+    /// Not a tokenizer. It over-counts CJK, which takes three bytes per character but
+    /// usually fewer than one token, so figures are comparable across runs but not with a
+    /// provider's billing.
     static func approxTokens(_ s: String) -> Int { max(0, s.utf8.count / 4) }
 }
 
 // MARK: - ContentQualityAnalyzer
 
-/// 抽出済み Markdown（= LLM が実際に受け取るテキスト）を走査し、
-/// トークンを浪費する余計なペイロードを定量化する。
+/// Scans the extracted Markdown — the exact text an LLM would receive — and quantifies the
+/// parts of it that are waste.
+///
+/// This is what makes extraction changes measurable: run the corpus before and after, and
+/// compare wasted characters per signal.
 enum ContentQualityAnalyzer {
 
+    /// Runs every signal over one page. Purely textual, with no network access and no state.
     static func analyze(_ content: String) -> NoiseReport {
         var report = NoiseReport()
 
@@ -62,8 +77,9 @@ enum ContentQualityAnalyzer {
         return report
     }
 
-    // MARK: base64 data URI（最大の浪費要因）
+    // MARK: base64 data URI — historically the single largest source of waste
 
+    /// Counts inline base64 blobs of 100 characters or more. Every matched character is waste.
     private static func analyzeBase64(_ s: String, into r: inout NoiseReport) {
         guard let regex = try? NSRegularExpression(pattern: "data:[^;\\s]+;base64,[A-Za-z0-9+/=]{100,}") else { return }
         let ns = s as NSString
@@ -77,14 +93,17 @@ enum ContentQualityAnalyzer {
         }
     }
 
-    // MARK: 重複行
+    // MARK: Duplicate lines
 
+    /// Counts lines that appear three or more times, charging every repeat after the first.
+    ///
+    /// The count reported is distinct offending lines, not total repetitions.
     private static func analyzeDuplicateLines(_ s: String, into r: inout NoiseReport) {
         let lines = s.components(separatedBy: "\n")
         var counts: [String: Int] = [:]
         for line in lines {
             let t = line.trimmingCharacters(in: .whitespaces)
-            guard t.count >= 3 else { continue }  // 空行・記号のみは別枠
+            guard t.count >= 3 else { continue }  // Blank and punctuation-only lines belong to blankRuns.
             counts[t, default: 0] += 1
         }
         var wasted = 0
@@ -92,7 +111,7 @@ enum ContentQualityAnalyzer {
         var sample: String?
         for (line, c) in counts where c >= 3 {
             dupKinds += 1
-            wasted += line.count * (c - 1)  // 2回目以降を無駄とみなす
+            wasted += line.count * (c - 1)  // The first occurrence is legitimate; the rest are not.
             if sample == nil { sample = "「\(String(line.prefix(40)))」が\(c)回" }
         }
         guard dupKinds > 0 else { return }
@@ -101,8 +120,10 @@ enum ContentQualityAnalyzer {
         if let sample { r.samples.append("重複行: \(sample)") }
     }
 
-    // MARK: トラッキング URL
+    // MARK: Tracking URLs
 
+    /// Counts URLs carrying tracking parameters. The whole URL is charged, not just the
+    /// parameters, because a link that should have been stripped is waste in full.
     private static func analyzeTrackingURLs(_ s: String, into r: inout NoiseReport) {
         guard let regex = try? NSRegularExpression(pattern: "https?://[^\\s\\)]*(?:utm_|gclid=|fbclid=|mc_eid=|igshid=)[^\\s\\)]*") else { return }
         let ns = s as NSString
@@ -113,21 +134,25 @@ enum ContentQualityAnalyzer {
         r.wastedCharsBySignal[NoiseSignal.trackingURL.rawValue] = chars
     }
 
-    // MARK: 過剰な空行
+    // MARK: Excess blank lines
 
+    /// Counts runs of three or more newlines, charging everything past the two a paragraph break needs.
     private static func analyzeBlankRuns(_ s: String, into r: inout NoiseReport) {
         guard let regex = try? NSRegularExpression(pattern: "\\n[ \\t]*\\n[ \\t]*(?:\\n[ \\t]*)+") else { return }
         let ns = s as NSString
         let matches = regex.matches(in: s, range: NSRange(location: 0, length: ns.length))
         guard !matches.isEmpty else { return }
-        // 3連以上の改行のうち、2つを超える分を無駄とみなす
         let wasted = matches.reduce(0) { $0 + max(0, $1.range.length - 2) }
         r.countsBySignal[NoiseSignal.blankRuns.rawValue] = matches.count
         r.wastedCharsBySignal[NoiseSignal.blankRuns.rawValue] = wasted
     }
 
-    // MARK: 定型文（Cookie / 購読 / SNS シェア）
+    // MARK: Boilerplate (cookie notices, subscription prompts, social share)
 
+    /// Phrases matched case-insensitively as substrings, in English and Japanese.
+    ///
+    /// Substring matching means an article discussing privacy policies scores hits too, so
+    /// this signal is noisier than the others.
     private static let boilerplatePhrases: [String] = [
         "we use cookies", "accept all cookies", "cookie policy", "manage cookies",
         "subscribe to our newsletter", "sign up for", "create an account", "sign in",
@@ -158,19 +183,23 @@ enum ContentQualityAnalyzer {
         if let sample { r.samples.append("定型文: 「\(sample)」等 \(hits)箇所") }
     }
 
-    // MARK: HTML / CSS / JS 残骸
+    // MARK: HTML / CSS / JavaScript residue
 
+    /// Counts raw markup and script fragments that survived extraction.
+    ///
+    /// A Markdown code block containing HTML looks identical to leaked markup here, so a
+    /// page documenting HTML scores on this signal legitimately.
     private static func analyzeHTMLResidue(_ s: String, into r: inout NoiseReport) {
         var wasted = 0
         var count = 0
-        // 生 HTML タグ
+        // Raw HTML tags.
         if let tagRegex = try? NSRegularExpression(pattern: "</?(?:div|span|script|style|nav|footer|header|svg|button|input|form|ul|li|a)\\b[^>]*>", options: [.caseInsensitive]) {
             let ns = s as NSString
             let m = tagRegex.matches(in: s, range: NSRange(location: 0, length: ns.length))
             count += m.count
             wasted += m.reduce(0) { $0 + $1.range.length }
         }
-        // CSS / JS の断片
+        // CSS and JavaScript fragments.
         for pattern in ["function\\s*\\(", "@media\\b", "\\bvar\\s+\\w+\\s*=", "\\{[^{}]*:[^{}]*;[^{}]*\\}"] {
             if let re = try? NSRegularExpression(pattern: pattern) {
                 let ns = s as NSString
@@ -184,20 +213,21 @@ enum ContentQualityAnalyzer {
         r.wastedCharsBySignal[NoiseSignal.htmlResidue.rawValue] = wasted
     }
 
-    // MARK: リンク過多（ナビ残骸）
+    // MARK: Link density (leftover navigation)
 
+    /// Flags pages where Markdown link markup exceeds 35% of the text, and charges the excess.
+    ///
+    /// Pages with fewer than 5 links or under 500 characters are skipped: the ratio is
+    /// meaningless when the denominator is small.
     private static func analyzeLinkDensity(_ s: String, into r: inout NoiseReport) {
         guard let regex = try? NSRegularExpression(pattern: "\\[[^\\]]*\\]\\([^\\)]*\\)") else { return }
         let ns = s as NSString
         let matches = regex.matches(in: s, range: NSRange(location: 0, length: ns.length))
-        // 薄ページ（リンク数僅少 / 本文極小）は分母が小さく誤検出するためガード
         guard matches.count >= 5, ns.length >= 500 else { return }
         let linkChars = matches.reduce(0) { $0 + $1.range.length }
         let ratio = Double(linkChars) / Double(ns.length)
-        // リンク markup がテキストの 35% 超 = メニュー/リンク集の残骸が支配的
         guard ratio > 0.35 else { return }
         r.countsBySignal[NoiseSignal.linkDense.rawValue] = matches.count
-        // 過剰分（35% を超えた分）を無駄とみなす
         r.wastedCharsBySignal[NoiseSignal.linkDense.rawValue] = Int(Double(ns.length) * (ratio - 0.35))
         r.samples.append(String(format: "リンク密度 %.0f%%（%d リンク）", ratio * 100, matches.count))
     }

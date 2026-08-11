@@ -6,13 +6,14 @@ import FoundationNetworking
 
 // MARK: - FetchedDocument
 
-/// fetch の結果（ページネーション前の全文）。
+/// One fetched page, in full — the caller is responsible for paginating it.
 public struct FetchedDocument: Sendable {
+    /// The URL that was requested, not the final URL after redirects.
     public let url: URL
     public let title: String?
-    /// 抽出済み本文（HTML なら Markdown、それ以外は生テキスト）
+    /// Extracted body: Markdown for HTML and feeds, decoded text for everything else.
     public let text: String
-    /// maxContentSize 超過で切り詰めたか
+    /// True when the response exceeded `maxContentSize`, so `text` covers only its first bytes.
     public let wasTruncated: Bool
 
     public init(url: URL, title: String?, text: String, wasTruncated: Bool) {
@@ -25,40 +26,50 @@ public struct FetchedDocument: Sendable {
 
 // MARK: - WebFetchHeadersResult
 
-/// `fetchHeaders` の結果。URL・ステータスコード・ヘッダーを保持する。
+/// The outcome of a HEAD request.
 public struct WebFetchHeadersResult: Sendable {
+    /// The URL that was requested, not the final URL after redirects.
     public let url: String
     public let statusCode: Int
+    /// Response headers flattened into a dictionary; a header sent more than once keeps only its last value.
     public let headers: [String: String]
 }
 
 // MARK: - WebFetchEngine
 
-/// URL を取得し、読みやすいテキスト（HTML は Markdown）に変換するコアエンジン。
+/// Fetches a URL and converts the response into text an LLM can read.
 ///
-/// MCP / LLMTool には一切依存しない純粋なフェッチ層。`WebToolKit`（MCP アダプタ）
-/// や `web-fetch-probe`、その他エージェントから再利用できる。
+/// HTML becomes Markdown, RSS/Atom becomes a Markdown item list, and anything else is
+/// returned as decoded text. Knows nothing about MCP or tool calling, so the MCP adapter
+/// (`WebToolKit`), the `web-fetch-probe` executable and other agents all share one engine.
 public struct WebFetchEngine: Sendable {
 
-    /// 許可ドメイン（nil なら全許可）
+    /// Hosts this engine may fetch from; `nil` allows every host.
+    ///
+    /// Matched case-insensitively against the whole host, so subdomains are not implied —
+    /// allowing `example.com` still rejects `www.example.com`.
     public let allowedDomains: Set<String>?
-    /// リクエストのタイムアウト秒数
+    /// Per-request timeout in seconds. The default transport also caps a whole resource at twice this.
     public let timeout: TimeInterval
-    /// 最大取得サイズ（バイト）
+    /// Byte cap applied to the response body after it has been received in full.
+    ///
+    /// It bounds what gets decoded, not what gets downloaded or held in memory. `fetch`
+    /// truncates at this size; `fetchRawJSON` throws ``WebFetchError/contentTooLarge(size:maxSize:)``.
     public let maxContentSize: Int
-    /// コンテンツ抽出器
+    /// Turns HTML into Markdown. Replace it to change what counts as the main content.
     public let extractor: any WebContentExtractor
-    /// HTTP トランスポート
+    /// HTTP layer used by every request. Substitute it in tests to avoid real network calls.
     public let transport: any HTTPTransport
 
-    /// WebFetchEngine を作成
+    /// Creates an engine, building a `URLSession`-backed transport unless one is supplied.
     ///
     /// - Parameters:
-    ///   - allowedDomains: 許可ドメインの配列（`nil` で全ドメインを許可）
-    ///   - timeout: リクエストのタイムアウト秒数（デフォルト: 30）
-    ///   - maxContentSize: 最大取得サイズ（バイト、デフォルト: 5 MB）
-    ///   - extractor: コンテンツ抽出器（デフォルト: `SwiftSoupContentExtractor`）
-    ///   - transport: HTTP トランスポート（テスト時に差し替え可能）
+    ///   - allowedDomains: Hosts to allow; `nil` allows every host. Entries are lowercased.
+    ///   - timeout: Per-request timeout in seconds.
+    ///   - maxContentSize: Byte cap on the decoded body.
+    ///   - extractor: HTML-to-Markdown extractor. Defaults to ``SwiftSoupContentExtractor``.
+    ///   - transport: HTTP transport. Supplying one makes `timeout` apply per request only,
+    ///     because the resource-level timeout lives on the default session configuration.
     public init(
         allowedDomains: [String]? = nil,
         timeout: TimeInterval = 30,
@@ -83,7 +94,10 @@ public struct WebFetchEngine: Sendable {
 
     // MARK: - Domain Validation
 
-    /// ドメインが許可されているかチェックし、URL を返す。
+    /// Parses a URL string and rejects it unless the scheme is http or https and the host is allowed.
+    ///
+    /// - Throws: ``WebFetchError/invalidURL(_:)``, ``WebFetchError/unsupportedScheme(_:)``
+    ///   or ``WebFetchError/domainNotAllowed(_:allowed:)``.
     public func validateURL(_ urlString: String) throws -> URL {
         guard let url = URL(string: urlString) else {
             throw WebFetchError.invalidURL(urlString)
@@ -102,7 +116,31 @@ public struct WebFetchEngine: Sendable {
 
     // MARK: - fetch
 
-    /// URL を取得し、抽出済み本文（全文）を返す。ページネーションは呼び出し側で行う。
+    /// Fetches a URL and returns the whole extracted body; the caller paginates it.
+    ///
+    /// The steps, in order: DocC render-JSON substitution for `developer.apple.com` and
+    /// `docs.swift.org`, rejection of any non-2xx status, rejection of binary content types,
+    /// truncation to ``maxContentSize``, charset detection, then feed or HTML extraction.
+    ///
+    /// Two responses that look successful are turned into errors instead. A binary
+    /// content type (PDF, image, audio, video) throws rather than reaching the caller as
+    /// mojibake, and a page that returns 200 carrying a bot challenge or a
+    /// "JavaScript required" interstitial throws ``WebFetchError/challengeBlocked(reason:)``.
+    ///
+    /// Redirects are left to the transport — this method imposes no redirect limit — and
+    /// the returned ``FetchedDocument/url`` is the requested URL, not the final one.
+    /// A body over ``maxContentSize`` is truncated rather than rejected, so a caller that
+    /// needs completeness must check ``FetchedDocument/wasTruncated``.
+    ///
+    /// - Parameters:
+    ///   - urlString: URL to fetch.
+    ///   - method: HTTP method.
+    ///   - headers: Extra headers. They overwrite the built-in browser User-Agent, Accept
+    ///     and Accept-Language on a key collision.
+    ///   - body: Request body, sent as UTF-8. No Content-Type is added for it.
+    ///   - raw: Skips DocC, feed and HTML handling and returns the decoded text unchanged.
+    ///     Binary rejection and truncation still apply.
+    /// - Throws: ``WebFetchError``.
     public func fetch(
         url urlString: String,
         method: String = "GET",
@@ -112,8 +150,8 @@ public struct WebFetchEngine: Sendable {
     ) async throws -> FetchedDocument {
         let url = try validateURL(urlString)
 
-        // DocC ドキュメント（Apple/Swift）は HTML が JS シェルで本文を持たない。
-        // render JSON から全文を取得する。失敗時は通常の HTML 取得にフォールバック。
+        // Apple/Swift DocC pages ship an empty JavaScript shell as HTML, so the text has to
+        // come from the render JSON. Any failure here falls through to the normal HTML path.
         if !raw, let jsonURL = DocCSupport.renderJSONURL(for: url),
            let doccDoc = try? await fetchDocC(original: url, jsonURL: jsonURL) {
             return doccDoc
@@ -145,13 +183,14 @@ public struct WebFetchEngine: Sendable {
 
         let contentType = response.headers["Content-Type"]
 
-        // バイナリコンテンツ（PDF・画像・音声・動画）はサイズに関わらずテキスト変換不可。
-        // 5MB 未満の PDF 等が文字化けテキストとして LLM に流れる害を防ぐ。
+        // Binary content cannot become text at any size. Without this, a PDF under the size
+        // cap would reach the LLM as mojibake instead of as a failure.
         if HTMLDetector.isNonTextBinary(contentType: contentType) {
             throw WebFetchError.binaryContent(contentType: contentType ?? "unknown")
         }
 
-        // テキスト/HTMLコンテンツは切り詰めて処理続行
+        // Text and HTML are truncated rather than rejected, so an oversized page still yields
+        // its opening section.
         let processData: Data
         let wasTruncated: Bool
         if responseData.count > maxContentSize {
@@ -167,26 +206,30 @@ public struct WebFetchEngine: Sendable {
         }
 
         if !raw {
-            // RSS/Atom フィードは item 一覧の Markdown に整形（生 XML の冗長トークン削減）
+            // RSS/Atom becomes an item list in Markdown; raw XML wastes tokens.
             if FeedSupport.isFeed(contentType: contentType, content: content),
                let feed = FeedRenderer.render(xml: content) {
                 return FetchedDocument(url: url, title: feed.title, text: feed.markdown, wasTruncated: wasTruncated)
             }
-            // HTML は本文抽出 + Markdown 化
+            // HTML: pull out the main content and convert it to Markdown.
             if HTMLDetector.isHTML(contentType: contentType, content: content) {
                 let extracted = try extractor.extract(html: content, url: url)
-                // bot チャレンジ / JS 必須 interstitial を成功扱いせず明示的エラーに昇格
+                // Promote bot challenges and JavaScript-required interstitials to errors instead
+                // of returning them as if they were the page.
                 if let reason = ChallengeDetector.detect(title: extracted.title, text: extracted.content) {
                     throw WebFetchError.challengeBlocked(reason: reason)
                 }
                 return FetchedDocument(url: url, title: extracted.title, text: extracted.content, wasTruncated: wasTruncated)
             }
         }
-        // それ以外（プレーンテキスト/JSON 等）は生テキストを返す
+        // Everything else (plain text, JSON, and any response with raw: true) passes through.
         return FetchedDocument(url: url, title: nil, text: content, wasTruncated: wasTruncated)
     }
 
-    /// DocC render JSON を取得して Markdown 化する。
+    /// Fetches a DocC render JSON document and renders it as Markdown.
+    ///
+    /// Throws ``WebFetchError/encodingError`` when the JSON is present but cannot be rendered;
+    /// the caller treats every error from here as "use the HTML path instead".
     private func fetchDocC(original: URL, jsonURL: URL) async throws -> FetchedDocument {
         let request = HTTPRequest(
             method: "GET",
@@ -202,22 +245,28 @@ public struct WebFetchEngine: Sendable {
             throw WebFetchError.httpError(statusCode: response.status)
         }
         guard let rendered = DocCRenderer.render(jsonData: response.body, host: original.host ?? "") else {
-            throw WebFetchError.encodingError  // レンダリング失敗 → HTML にフォールバック
+            throw WebFetchError.encodingError  // Render failure; the caller falls back to HTML.
         }
         return FetchedDocument(url: original, title: rendered.title, text: rendered.markdown, wasTruncated: false)
     }
 
     // MARK: - fetch JSON (raw)
 
-    /// JSON 取得用の生レスポンス。パースは呼び出し側に委ねる。
+    /// Fetches a URL and hands back the undecoded bytes, leaving JSON parsing to the caller.
+    ///
+    /// Unlike ``fetch(url:method:headers:body:raw:)`` this rejects an oversized body instead
+    /// of truncating it, because half a JSON document is not parseable.
     ///
     /// - Parameters:
-    ///   - url: リクエスト URL 文字列
-    ///   - method: HTTP メソッド（デフォルト: `"GET"`）
-    ///   - headers: カスタムリクエストヘッダー
-    ///   - body: リクエストボディ（POST/PUT 用）
-    /// - Returns: `(status:, body:, url:)` — ステータスコード・レスポンスボディ・最終 URL
-    /// - Throws: ``WebFetchError``
+    ///   - urlString: URL to fetch.
+    ///   - method: HTTP method.
+    ///   - headers: Extra headers. They overwrite the built-in `Accept: application/json`.
+    ///   - body: Request body. Supplying one adds `Content-Type: application/json` unless
+    ///     `headers` already sets it.
+    /// - Returns: The status, the raw body, and the URL that was requested — not the final
+    ///   URL after redirects.
+    /// - Throws: ``WebFetchError/httpError(statusCode:)`` for any non-2xx status and
+    ///   ``WebFetchError/contentTooLarge(size:maxSize:)`` past ``maxContentSize``.
     public func fetchRawJSON(
         url urlString: String,
         method: String = "GET",
@@ -254,11 +303,14 @@ public struct WebFetchEngine: Sendable {
 
     // MARK: - fetch headers
 
-    /// HEAD リクエストで HTTP ヘッダーのみを取得
+    /// Sends a HEAD request to read status and headers without downloading the body.
     ///
-    /// - Parameter url: リクエスト URL 文字列
-    /// - Returns: ステータスコードとヘッダー辞書
-    /// - Throws: ``WebFetchError``
+    /// Use it to check content type or size before committing to a fetch. A non-2xx status
+    /// is reported in the result rather than thrown, so servers that reject HEAD still
+    /// return their status here.
+    ///
+    /// - Parameter urlString: URL to probe.
+    /// - Throws: ``WebFetchError`` for an invalid or disallowed URL, or a transport error.
     public func fetchHeaders(url urlString: String) async throws -> WebFetchHeadersResult {
         let url = try validateURL(urlString)
         let request = HTTPRequest(method: "HEAD", url: url, timeout: timeout)

@@ -2,47 +2,46 @@ import Foundation
 
 // MARK: - WorkspaceProvider
 
-/// ワークスペースのライフサイクル管理
+/// Creates and deletes one directory per agent session.
 ///
-/// セッションごとのワークスペースを作成・取得・削除する。
-/// セッション開始時に `createWorkspace(for:)` で作成し、
-/// セッション終了時に `removeWorkspace(for:)` で削除する。
-///
-/// ## 使用例
+/// Create at the start of a session, delete at the end. The in-memory map lives only as
+/// long as this actor, so a process that exits without deleting leaves the directories on
+/// disk — ``removeWorkspace(for:)`` can still clean those up from the session id alone.
 ///
 /// ```swift
 /// let provider = WorkspaceProvider()
 ///
-/// // セッション開始時
 /// let workspace = try await provider.createWorkspace(for: sessionId)
 ///
-/// // ツールに渡す
 /// let fileSystem = FileSystemToolKit(workspace: workspace)
 /// let policy = WorkspaceExecutionPolicy(workspace: workspace)
 ///
-/// // セッション終了時
 /// await provider.removeWorkspace(for: sessionId)
 /// ```
 public actor WorkspaceProvider {
-    /// セッション ID → Workspace のマッピング
     private var workspaces: [UUID: Workspace] = [:]
 
-    /// ワークスペースのベースディレクトリ
     private let baseDirectory: String
 
-    /// FileManager
     private let fileManager: FileManager
 
+    /// Creates a provider. No directory is touched until ``createWorkspace(for:)``.
+    ///
+    /// - Parameter baseDirectory: Parent for every session directory. Defaults to
+    ///   `Documents/Sessions`. Deletion is scoped to this directory, so pointing it at a
+    ///   directory holding other files puts them within reach of ``removeAll()``.
     public init(baseDirectory: String? = nil) {
         self.baseDirectory = baseDirectory ?? Self.defaultBaseDirectory
         self.fileManager = FileManager.default
     }
 
-    /// セッション用のワークスペースを作成
+    /// Creates `baseDirectory/<sessionId>` and registers a workspace rooted there.
     ///
-    /// - Parameter sessionId: セッション ID
-    /// - Returns: 作成されたワークスペース
-    /// - Throws: ディレクトリ作成に失敗した場合
+    /// Idempotent on disk — an existing directory is reused with its contents intact — but
+    /// it replaces any previously registered workspace for the same session id.
+    ///
+    /// - Parameter sessionId: Also becomes the workspace id and the directory name.
+    /// - Throws: A `FileManager` error when the directory cannot be created.
     public func createWorkspace(for sessionId: UUID) throws -> Workspace {
         let rootDir = (baseDirectory as NSString).appendingPathComponent(sessionId.uuidString)
         let workDir = rootDir
@@ -59,27 +58,29 @@ public actor WorkspaceProvider {
         return workspace
     }
 
-    /// セッションのワークスペースを取得
+    /// The workspace this provider created for a session, or `nil` if it created none.
     ///
-    /// - Parameter sessionId: セッション ID
-    /// - Returns: 存在する場合はワークスペース
+    /// Reads the in-memory map only, so a directory left behind by a previous process is
+    /// reported as absent even though it exists on disk.
     public func workspace(for sessionId: UUID) -> Workspace? {
         workspaces[sessionId]
     }
 
-    /// セッションのワークスペースを削除
+    /// Deletes a session's directory and everything in it.
     ///
-    /// インメモリ辞書にエントリがある場合はそのパスを使用し、
-    /// ない場合は `baseDirectory/{sessionId}` から直接削除を試みる。
-    /// これにより、前回起動で作成されたワークスペースや、
-    /// 一度も activate されなかったセッションのディレクトリも確実に削除される。
+    /// Works from the registered workspace when there is one, and otherwise from
+    /// `baseDirectory/<sessionId>` directly — which is what lets it reclaim directories
+    /// left by an earlier process run, or by a session that was never used.
     ///
-    /// - Parameter sessionId: セッション ID
+    /// Deletion failures are swallowed, so this reports nothing whether it removed
+    /// something, found nothing, or was denied permission.
+    ///
+    /// - Parameter sessionId: Session whose directory should go.
     public func removeWorkspace(for sessionId: UUID) {
         if let workspace = workspaces.removeValue(forKey: sessionId) {
             try? fileManager.removeItem(atPath: workspace.rootDirectory)
         } else {
-            // 辞書になくてもパスから直接削除を試みる
+            // Not registered here, but the directory may still exist from an earlier run.
             let rootDir = (baseDirectory as NSString)
                 .appendingPathComponent(sessionId.uuidString)
             if fileManager.fileExists(atPath: rootDir) {
@@ -88,7 +89,9 @@ public actor WorkspaceProvider {
         }
     }
 
-    /// 全ワークスペースを削除
+    /// Deletes every workspace this provider registered, and forgets them.
+    ///
+    /// Covers only what is in memory, so directories from earlier process runs survive.
     public func removeAll() {
         for workspace in workspaces.values {
             try? fileManager.removeItem(atPath: workspace.rootDirectory)
@@ -96,7 +99,7 @@ public actor WorkspaceProvider {
         workspaces.removeAll()
     }
 
-    /// デフォルトのベースディレクトリ
+    /// `Documents/Sessions`. Traps if the Documents directory cannot be resolved.
     private static var defaultBaseDirectory: String {
         let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return docsDir.appendingPathComponent("Sessions").path

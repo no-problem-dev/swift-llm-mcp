@@ -2,40 +2,40 @@ import Foundation
 
 // MARK: - WebContentExtractor Protocol
 
-/// HTMLコンテンツ抽出プロバイダーのプロトコル
+/// Strategy for turning a page of HTML into the text worth reading.
 ///
-/// 異なる抽出戦略を差し替え可能にするための抽象化。
-/// `WebSearchProvider` パターンに倣い、デフォルト実装として
-/// `SwiftSoupContentExtractor` を提供する。
-///
-/// ## 使用例
+/// Conform to it when the built-in readability heuristic picks the wrong element on a site
+/// you care about, then pass your type to ``WebFetchEngine/init(allowedDomains:timeout:maxContentSize:extractor:transport:)``.
+/// ``SwiftSoupContentExtractor`` is the default.
 ///
 /// ```swift
 /// let extractor = SwiftSoupContentExtractor()
 /// let content = try extractor.extract(html: htmlString, url: pageURL)
-/// print(content.content) // Markdown形式のテキスト
+/// print(content.content) // Markdown
 /// ```
 public protocol WebContentExtractor: Sendable {
-    /// HTMLからコンテンツを抽出
+    /// Extracts the main content of a page as Markdown.
+    ///
+    /// Implementations are expected to return something rather than throw on a thin page —
+    /// ``WebFetchEngine`` treats a throw here as a failed fetch.
     ///
     /// - Parameters:
-    ///   - html: 生のHTML文字列
-    ///   - url: ページのURL（相対リンクの解決に使用）
-    /// - Returns: 抽出されたコンテンツ
+    ///   - html: Raw HTML source.
+    ///   - url: The page URL, used to resolve relative links to absolute ones.
     func extract(html: String, url: URL) throws -> ExtractedContent
 }
 
 // MARK: - ExtractedContent
 
-/// 抽出されたWebコンテンツ
+/// What a ``WebContentExtractor`` found on a page.
 public struct ExtractedContent: Sendable {
-    /// ページタイトル
     public let title: String?
 
-    /// 抽出されたコンテンツ（Markdown形式）
+    /// The main content, in Markdown.
     public let content: String
 
-    /// メタデータ（description, og:image, canonical等）
+    /// Page metadata, keyed by its HTML name: `description`, `og:title`, `og:description`,
+    /// `og:image`, `canonical`. Absent keys mean the page did not declare them.
     public let metadata: [String: String]
 
     public init(title: String?, content: String, metadata: [String: String] = [:]) {

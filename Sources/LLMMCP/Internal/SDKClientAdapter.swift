@@ -5,10 +5,11 @@ import LLMClient
 import LLMTool
 import MCP
 
-/// MCP SDK の Client をラップし、自前の型に変換するアダプター
+/// Wraps the MCP SDK client so no SDK type appears in this module's public API.
 ///
-/// SDK の詳細をカプセル化し、LLMMCP モジュールの公開 API から
-/// SDK の型を隠蔽する。
+/// One adapter owns one connection. It connects lazily on the first operation and stays
+/// connected until ``disconnect()`` — callers that create an adapter per call pay a full
+/// connection each time.
 internal actor SDKClientAdapter {
     // MARK: - Properties
 
@@ -19,12 +20,12 @@ internal actor SDKClientAdapter {
     // MARK: - Initialization
 
     #if os(macOS)
-    /// stdio接続用のアダプターを作成（macOSのみ）
+    /// Prepares a subprocess-backed adapter. The process starts on first use, not here.
     ///
     /// - Parameters:
-    ///   - command: MCPサーバーのコマンドパス
-    ///   - arguments: コマンド引数
-    ///   - environment: 環境変数
+    ///   - command: Absolute path to the server executable.
+    ///   - arguments: Arguments for it.
+    ///   - environment: Variables layered over the parent process environment.
     init(
         command: String,
         arguments: [String] = [],
@@ -42,13 +43,12 @@ internal actor SDKClientAdapter {
     }
     #endif
 
-    /// HTTP接続用のアダプターを作成
+    /// Prepares an HTTP-backed adapter. No request is sent until first use.
     ///
     /// - Parameters:
-    ///   - url: MCPサーバーのURL
-    ///   - authorization: 認証設定
+    ///   - url: Endpoint of the MCP server.
+    ///   - authorization: Applied by a request hook, so it covers every request the transport makes.
     init(url: URL, authorization: MCPAuthorization = .none) {
-        // 認証設定に基づいてトランスポートを作成
         switch authorization {
         case .none:
             self.transport = HTTPClientTransport(endpoint: url)
@@ -82,14 +82,14 @@ internal actor SDKClientAdapter {
 
     // MARK: - Connection Management
 
-    /// MCPサーバーに接続
+    /// Connects and performs the MCP handshake. A second call while connected does nothing.
     func connect() async throws {
         guard !isConnected else { return }
         _ = try await client.connect(transport: transport)
         isConnected = true
     }
 
-    /// 接続を切断
+    /// Closes the connection and, for stdio, terminates the server process. Safe to call twice.
     func disconnect() async {
         guard isConnected else { return }
         await client.disconnect()
@@ -98,68 +98,66 @@ internal actor SDKClientAdapter {
 
     // MARK: - Tool Operations
 
-    /// 利用可能なツール一覧を取得し、MCPTool型に変換
+    /// Lists every tool the server offers, following pagination to the end.
     ///
-    /// - Returns: MCPツールの配列
+    /// The loop has no page limit and no cycle detection, so a server that keeps returning
+    /// a cursor never terminates.
     func listTools() async throws -> [MCPTool] {
         try await ensureConnected()
 
         var allTools: [MCP.Tool] = []
         var cursor: String? = nil
 
-        // ページネーションを処理
         repeat {
             let result = try await client.listTools(cursor: cursor)
             allTools.append(contentsOf: result.tools)
             cursor = result.nextCursor
         } while cursor != nil
 
-        // SDK型からMCPTool型に変換
         return allTools.map { sdkTool in
             convertToMCPTool(sdkTool)
         }
     }
 
-    /// ツールを実行し、結果をToolResult型に変換
+    /// Calls one tool and flattens the reply into a ``ToolResult``.
     ///
     /// - Parameters:
-    ///   - name: ツール名
-    ///   - arguments: 引数（JSON Data）
-    /// - Returns: ツール実行結果
+    ///   - name: Tool name.
+    ///   - arguments: A JSON object. Empty data, or JSON that is not an object, is sent as
+    ///     no arguments at all rather than rejected.
+    /// - Throws: A JSON parse error for malformed input, or a transport or server error.
     func callTool(name: String, arguments: Data) async throws -> ToolResult {
         try await ensureConnected()
 
-        // DataをMCP.Valueの辞書に変換
         let valueArguments = try convertDataToValueDict(arguments)
-
-        // ツールを実行
         let result = try await client.callTool(name: name, arguments: valueArguments)
-
-        // 結果をToolResultに変換
         return convertToToolResult(content: result.content, isError: result.isError)
     }
 
     // MARK: - Private Helpers
 
-    /// 接続されていることを確認
+    /// Connects if not already connected. Does not reconnect a connection dropped by the peer.
     private func ensureConnected() async throws {
         if !isConnected {
             try await connect()
         }
     }
 
-    /// MCP.ToolをMCPToolに変換
+    /// Converts one SDK tool, binding its call closure back to this adapter.
+    ///
+    /// The closure holds the adapter weakly, so a tool outlives its adapter only as a value:
+    /// calling it after the adapter is released throws "Adapter was deallocated".
     private func convertToMCPTool(_ sdkTool: MCP.Tool) -> MCPTool {
-        // inputSchemaを変換
         let inputSchema = convertValueToJSONSchema(sdkTool.inputSchema)
 
-        // annotationsからcapabilitiesを推測
+        // Missing hints read as "writable, non-destructive", so an unannotated tool
+        // survives the .safe preset and is excluded by .readOnly.
         let capabilities = MCPToolCapabilities.from(
             isReadOnly: sdkTool.annotations.readOnlyHint ?? false,
             isDangerous: sdkTool.annotations.destructiveHint ?? false
         )
 
-        // ツール名をキャプチャ（Sendable対応）
+        // Capture the name as a value so the closure stays Sendable.
         let toolName = sdkTool.name
 
         return MCPTool(
@@ -179,14 +177,20 @@ internal actor SDKClientAdapter {
         }
     }
 
-    /// MCP SDK の `Value` 形式のスキーマを ``JSONSchema`` へ変換する。
-    /// `Value` は Encodable なので structured-data 経由で JSONSchema へ直接デコードする。
+    /// Converts an SDK schema `Value` into a ``JSONSchema`` by round-tripping it through structured-data.
+    ///
+    /// A schema that does not decode becomes an empty object, so the model is told the tool
+    /// takes no arguments. The decoding error is discarded, which makes that look like a
+    /// tool with no parameters rather than a conversion failure.
     private func convertValueToJSONSchema(_ value: MCP.Value) -> JSONSchema {
         (try? StructuredValue.encoded(value).decode(JSONSchema.self))
             ?? .object(properties: [:], required: [])
     }
 
-    /// DataをMCP.Valueの辞書に変換
+    /// Parses argument data into an SDK value dictionary.
+    ///
+    /// Returns `nil` for empty data and, notably, also for valid JSON that is not an
+    /// object — an array or bare scalar is sent as "no arguments" instead of being rejected.
     private func convertDataToValueDict(_ data: Data) throws -> [String: MCP.Value]? {
         guard !data.isEmpty else { return nil }
 
@@ -197,7 +201,7 @@ internal actor SDKClientAdapter {
         return convertObjectToValueDict(object)
     }
 
-    /// OrderedObjectをMCP.Valueの辞書に変換
+    /// Converts a parsed object to an SDK dictionary, losing key order in the process.
     private func convertObjectToValueDict(_ object: OrderedObject) -> [String: MCP.Value] {
         var result: [String: MCP.Value] = [:]
         for (key, value) in object {
@@ -206,7 +210,7 @@ internal actor SDKClientAdapter {
         return result
     }
 
-    /// StructuredValueをMCP.Valueに変換
+    /// Converts one parsed value to its SDK counterpart, narrowing numbers to `Int` when they fit.
     private func convertValueToMCPValue(_ value: StructuredValue) -> MCP.Value {
         switch value {
         case .null:
@@ -225,9 +229,11 @@ internal actor SDKClientAdapter {
         }
     }
 
-    /// MCP.Tool.ContentをToolResultに変換
+    /// Flattens a tool reply's content blocks into a single text result, joined by newlines.
+    ///
+    /// Only text survives intact. Images, audio and binary resources are replaced by a short
+    /// placeholder describing them, so a tool that returns a picture returns a caption here.
     private func convertToToolResult(content: [MCP.Tool.Content], isError: Bool?) -> ToolResult {
-        // 複数のコンテンツを結合
         var textParts: [String] = []
 
         for item in content {
@@ -236,11 +242,12 @@ internal actor SDKClientAdapter {
                 textParts.append(text)
 
             case .image(let data, let mimeType, _, _):
-                // 画像はBase64文字列として含める（将来的にToolResultに画像サポートを追加可能）
+                // ToolResult carries text only, so the image is reduced to its first 50
+                // base64 characters — enough to identify it, not enough to reconstruct it.
                 textParts.append("[Image: \(mimeType), \(data.prefix(50))...]")
 
             case .audio(let data, let mimeType, _, _):
-                // オーディオはテキストとして表現
+                // Audio is described rather than carried, for the same reason.
                 textParts.append("[Audio: \(mimeType), \(data.count) bytes base64]")
 
             case .resource(let resource, _, _):
@@ -255,7 +262,7 @@ internal actor SDKClientAdapter {
             }
         }
 
-        // エラーの場合はエラー結果として返す
+        // A server-reported failure becomes ToolResult.error, never a thrown error.
         if isError == true {
             return .error(textParts.joined(separator: "\n"))
         }
