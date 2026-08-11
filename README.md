@@ -5,7 +5,7 @@ English | [日本語](./README.ja.md)
 Give a Swift LLM agent things it can actually do — read files, fetch pages, search the web — from the tools built in here or from any MCP server you point it at.
 
 ![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)
-![Platforms](https://img.shields.io/badge/Platforms-iOS%2017+%20%7C%20macOS%2014+-blue.svg)
+![Platforms](https://img.shields.io/badge/Platforms-iOS%2017+%20%7C%20macOS%2014+%20%7C%20Linux-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## Overview
@@ -98,7 +98,7 @@ dependencies: [
 
 ## Requirements
 
-- iOS 17.0+ / macOS 14.0+ — stdio MCP servers are macOS only, since they run a subprocess
+- iOS 17.0+ / macOS 14.0+ / Linux — stdio MCP servers are unavailable on iOS, which cannot spawn a subprocess
 - Swift 6.2+
 
 ## License

@@ -5,7 +5,7 @@
 Swift の LLM エージェントに「実際にできること」を与える — ファイルを読む、ページを取ってくる、Web を検索する。同梱のツールからでも、任意の MCP サーバーからでも。
 
 ![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)
-![Platforms](https://img.shields.io/badge/Platforms-iOS%2017+%20%7C%20macOS%2014+-blue.svg)
+![Platforms](https://img.shields.io/badge/Platforms-iOS%2017+%20%7C%20macOS%2014+%20%7C%20Linux-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## 概要
@@ -96,7 +96,7 @@ dependencies: [
 
 ## 要件
 
-- iOS 17.0+ / macOS 14.0+ — stdio の MCP サーバーはサブプロセスを起動するため macOS のみ
+- iOS 17.0+ / macOS 14.0+ / Linux — stdio の MCP サーバーはサブプロセスを起動するため iOS では使えない
 - Swift 6.2+
 
 ## ライセンス

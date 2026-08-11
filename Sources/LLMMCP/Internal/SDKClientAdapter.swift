@@ -31,7 +31,7 @@ internal actor SDKClientAdapter {
         )
     }
 
-    #if os(macOS)
+    #if os(macOS) || os(Linux)
     /// Prepares a subprocess-backed adapter. The process starts on first use, not here.
     ///
     /// - Parameters:

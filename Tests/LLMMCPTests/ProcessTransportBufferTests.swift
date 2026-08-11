@@ -1,4 +1,4 @@
-#if os(macOS)
+#if os(macOS) || os(Linux)
 import Testing
 import Foundation
 import MCP
@@ -66,10 +66,14 @@ struct ProcessTransportBufferTests {
     @Test("A long message is fine as long as it ends in a newline")
     func largeButTerminatedMessageIsDelivered() async throws {
         // Well over one read from the pipe, so it arrives in pieces and is reassembled.
-        let payload = String(repeating: "x", count: 300_000)
+        //
+        // The child generates the payload rather than receiving it as an argument: Linux caps a
+        // single argument at 128 KiB, so passing 300 KB on the command line fails there for a
+        // reason that has nothing to do with the buffer being tested.
+        let payloadLength = 300_000
         let transport = ProcessTransport(
-            command: "/bin/echo",
-            arguments: [payload],
+            command: "/bin/sh",
+            arguments: ["-c", "head -c \(payloadLength) /dev/zero | tr '\\0' 'x'; echo"],
             maximumPendingBytes: 1024 * 1024
         )
 
@@ -79,7 +83,7 @@ struct ProcessTransportBufferTests {
 
         #expect(error == nil)
         #expect(messages.count == 1)
-        #expect(messages.first?.count == payload.count)
+        #expect(messages.first?.count == payloadLength)
     }
 }
 #endif

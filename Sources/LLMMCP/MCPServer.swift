@@ -121,10 +121,11 @@ public struct MCPConfiguration: Sendable {
 
 /// How to reach an MCP server.
 public enum MCPTransport: Sendable {
-    #if os(macOS)
+    #if os(macOS) || os(Linux)
     /// Launches a subprocess and speaks newline-delimited JSON-RPC over its stdin and stdout.
     ///
-    /// macOS only. The command runs with the parent's environment plus any overrides, and its
+    /// Not available on iOS, which cannot spawn a subprocess. The command runs with the parent's
+    /// environment plus any overrides, and its
     /// stderr is forwarded to the transport logger rather than the terminal.
     case stdio(command: String, arguments: [String])
     #endif
@@ -302,7 +303,7 @@ public struct MCPServer: MCPServerProtocol {
 
     /// What a new adapter needs, kept separate from `configuration` so it stays Sendable.
     private enum AdapterConfig: @unchecked Sendable {
-        #if os(macOS)
+        #if os(macOS) || os(Linux)
         case stdio(command: String, arguments: [String], environment: [String: String])
         #endif
         case http(url: URL, authorization: MCPAuthorization)
@@ -310,10 +311,10 @@ public struct MCPServer: MCPServerProtocol {
 
     private let adapterConfig: AdapterConfig
 
-    #if os(macOS)
+    #if os(macOS) || os(Linux)
     // MARK: - Initialization (stdio)
 
-    /// Configures a server that runs as a subprocess. macOS only.
+    /// Configures a server that runs as a subprocess. Not available on iOS.
     ///
     /// Nothing is launched here; the process starts on the first ``fetchTools()`` or
     /// ``executeTool(named:arguments:)`` call, so a bad command surfaces then and not now.
@@ -399,7 +400,7 @@ public struct MCPServer: MCPServerProtocol {
 
     private func createAdapter() -> SDKClientAdapter {
         switch adapterConfig {
-        #if os(macOS)
+        #if os(macOS) || os(Linux)
         case .stdio(let command, let arguments, let environment):
             return SDKClientAdapter(command: command, arguments: arguments, environment: environment)
         #endif

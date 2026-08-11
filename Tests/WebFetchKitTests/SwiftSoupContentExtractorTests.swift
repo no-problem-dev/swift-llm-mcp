@@ -704,6 +704,33 @@ struct EncodingDetectionTests {
         let data = try #require(html.data(using: .ascii))
         #expect(EncodingDetector.sniffMetaCharset(data) == "euc-jp")
     }
+
+    /// The label table hands back `String.Encoding` values written as raw `NSStringEncoding`
+    /// numbers, because the function that produces them is Darwin-only. A wrong number does not
+    /// fail to compile — it silently resolves to an encoding that decodes nothing, so every entry
+    /// is exercised here instead. EUC-JP is the one encoding Linux Foundation has no codec for, so
+    /// it is the only permitted gap; anything else means a bad number or a platform regression.
+    @Test("Every encoding in the label table decodes on the platform running this test")
+    func everyTableEncodingDecodesOnThisPlatform() {
+        let ascii = Data("hello".utf8)
+        let undecodable = Set(
+            EncodingDetector.encodingsByLabel.values
+                .filter { String(data: ascii, encoding: $0) == nil }
+        )
+        #expect(undecodable.isSubset(of: [.japaneseEUC]))
+    }
+
+    @Test("Legacy charset names resolve on every platform, not just Apple ones")
+    func resolvesLegacyLabelsEverywhere() {
+        #expect(EncodingDetector.stringEncoding(from: "big5") == .big5)
+        #expect(EncodingDetector.stringEncoding(from: "EUC-KR") == .eucKR)
+        #expect(EncodingDetector.stringEncoding(from: "koi8-r") == .koi8R)
+        // WHATWG reads every GBK label with the gb18030 decoder, which is a superset
+        #expect(EncodingDetector.stringEncoding(from: "gbk") == .gb18030)
+        #expect(EncodingDetector.stringEncoding(from: "iso-8859-9") == .windowsCP1254)
+        #expect(EncodingDetector.stringEncoding(from: "tis-620") == .windows874)
+        #expect(EncodingDetector.stringEncoding(from: "no-such-charset") == nil)
+    }
 }
 
 // MARK: - Tracking Param Stripping Tests

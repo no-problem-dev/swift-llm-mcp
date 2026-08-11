@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/no-problem-dev/swift-structured-data.git",
       "state" : {
-        "revision" : "0f82306bae15be025540b873223c2baeed03d1ac",
-        "version" : "3.0.0"
+        "revision" : "a5a3dd4a034892f1124618de6a2491eed22ab166",
+        "version" : "3.0.1"
       }
     },
     {

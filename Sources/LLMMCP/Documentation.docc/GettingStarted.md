@@ -76,7 +76,7 @@ expanded before use.
 
 ```swift
 let tools = ToolSet {
-    // stdio: launches a subprocess. macOS only.
+    // stdio: launches a subprocess. Not available on iOS.
     MCPServer(
         command: "/usr/local/bin/npx",
         arguments: ["-y", "@anthropic/mcp-server-filesystem", "/path/to/dir"]
