@@ -135,6 +135,9 @@ public enum MCPError: Error, LocalizedError {
 
     case toolFetchFailed(serverName: String, underlying: Error)
 
+    /// A tool's input schema could not be converted, so what arguments it takes is unknown.
+    case toolSchemaConversionFailed(toolName: String, underlying: Error)
+
     case toolExecutionFailed(toolName: String, underlying: Error)
 
     case toolNotFound(toolName: String, serverName: String)
@@ -147,6 +150,8 @@ public enum MCPError: Error, LocalizedError {
             return "Failed to connect to MCP server '\(name)': \(error.localizedDescription)"
         case .toolFetchFailed(let name, let error):
             return "Failed to fetch tools from MCP server '\(name)': \(error.localizedDescription)"
+        case .toolSchemaConversionFailed(let tool, let error):
+            return "Could not read the input schema of MCP tool '\(tool)', so its parameters are unknown: \(error)"
         case .toolExecutionFailed(let name, let error):
             return "Failed to execute MCP tool '\(name)': \(error.localizedDescription)"
         case .toolNotFound(let tool, let server):

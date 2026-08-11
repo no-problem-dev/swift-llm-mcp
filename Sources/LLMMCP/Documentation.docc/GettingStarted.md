@@ -21,7 +21,7 @@ let tools = ToolSet {
     WebToolKit()
     FileSystemToolKit(allowedPaths: ["/Users/you/projects"])
     UtilityToolKit()
-    ScriptToolKit(bridge: ScriptBridge(allowedPaths: ["/tmp"]))
+    ScriptToolKit(bridge: ScriptBridge(allowedPaths: ["/tmp"], allowedHosts: ["api.example.com"]))
 }
 ```
 
@@ -29,8 +29,9 @@ Include ``UtilityToolKit`` in almost every set. A model has no clock, so without
 it will confidently invent today's date whenever the conversation touches "now" or "yesterday".
 
 The arguments are the security model. ``FileSystemToolKit`` with no `allowedPaths` can reach every
-path this process can, and ``ScriptToolKit``'s default ``ScriptBridge`` is equally unrestricted.
-On iOS the app sandbox is a real boundary; on macOS it is the user's whole home directory.
+path this process can, and ``ScriptToolKit``'s default ``ScriptBridge`` is equally unrestricted on
+both counts: no `allowedPaths` and no `allowedHosts`, so a script can read any file and fetch from
+any host. On iOS the app sandbox is a real boundary; on macOS it is the user's whole home directory.
 
 ## Bound a session to one directory
 
@@ -62,10 +63,11 @@ session; the error tells the model to call `read_file` first, which it generally
 `edit_file` also refuses an `old_string` that appears more than once, unless `replace_all` is set.
 That is what stops a rename from landing on the wrong occurrence.
 
-Two limits worth knowing. `read_file` has no size cap, so a large file goes straight into the
-context window — `get_file_info` first if that is a risk. And the path check is a string prefix
-comparison that does not resolve symlinks, so allowing `/data` also allows `/database`, and a
-symlink inside an allowed directory is followed out of it.
+Two limits worth knowing. `read_file` refuses a file over `maximumReadBytes` rather than
+truncating it, so a huge log cannot fill the context window — `get_file_info` reports the size if
+you want to check first. And the path check resolves symlinks and compares whole path components,
+so allowing `/data` does not allow `/database`, and a symlink inside an allowed directory cannot
+be followed out of it.
 
 ## Add an external MCP server
 

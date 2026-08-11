@@ -39,12 +39,15 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
 
     public let name: String = "filesystem"
 
-    /// Paths the model may touch, already tilde-expanded. `nil` allows everything.
-    private let allowedPaths: [String]?
+    /// Paths the model may touch. An empty boundary allows everything.
+    private let boundary: PathBoundary
 
     /// Where relative paths resolve. Its value is written into every tool's description, so
     /// the model can see which directory it is standing in.
     private let workingDirectory: String
+
+    /// The largest file the reading tools will return.
+    private let maximumReadBytes: Int
 
     private let fileManager: FileManager
 
@@ -66,11 +69,17 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
     ///   - workingDirectory: Where relative paths resolve. Defaults to the app's Documents
     ///     directory. It is not required to be inside `allowedPaths`, and a relative path
     ///     that resolves outside them is still rejected.
-    public init(allowedPaths: [String]? = nil, workingDirectory: String? = nil) {
-        self.allowedPaths = allowedPaths?.map { path in
-            NSString(string: path).expandingTildeInPath
-        }
+    ///   - maximumReadBytes: The largest file `read_file` and `read_multiple_files` will
+    ///     return. Whatever they return goes into the model's context, so this is a limit on
+    ///     the context as much as on memory.
+    public init(
+        allowedPaths: [String]? = nil,
+        workingDirectory: String? = nil,
+        maximumReadBytes: Int = 1024 * 1024
+    ) {
+        self.boundary = PathBoundary(allowedPaths: allowedPaths)
         self.workingDirectory = workingDirectory ?? Self.defaultWorkingDirectory
+        self.maximumReadBytes = maximumReadBytes
         self.fileManager = FileManager.default
     }
 
@@ -113,42 +122,48 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
 
     // MARK: - Path Validation
 
-    /// Resolves a path to an absolute one and rejects it if it falls outside ``allowedPaths``.
+    /// Resolves a path to a canonical absolute one and rejects it if it falls outside the
+    /// allowed paths.
     ///
     /// Anything not starting with `/` resolves against ``workingDirectory``, so `"."` gives
-    /// the working directory itself. `..` segments are collapsed before the check, so they
-    /// cannot be used to climb out.
-    ///
-    /// Two limits on how tight the boundary really is. The comparison is a string prefix
-    /// rather than a path-component one, so allowing `/data` also allows `/database`. And
-    /// symlinks are not resolved, so a link inside an allowed directory pointing outside it
-    /// is followed.
+    /// the working directory itself. ``PathBoundary`` does the resolving and the judging:
+    /// symlinks are followed to where they really point, `..` cannot climb out, and
+    /// containment is by path component, so allowing `/data` does not allow `/database`.
     ///
     /// - Throws: ``FileSystemToolKitError/accessDenied(path:allowedPaths:)``.
     private func validatePath(_ path: String) throws -> String {
-        let expandedPath = NSString(string: path).expandingTildeInPath
+        do {
+            return try boundary.resolve(path, workingDirectory: workingDirectory)
+        } catch {
+            throw FileSystemToolKitError.accessDenied(path: error.path, allowedPaths: error.allowedRoots)
+        }
+    }
 
-        let absolutePath: String
-        if expandedPath.hasPrefix("/") {
-            absolutePath = expandedPath
-        } else {
-            absolutePath = (workingDirectory as NSString).appendingPathComponent(expandedPath)
+    // MARK: - Read Size Limit
+
+    /// Rejects a file too large to hand to the model, before any of it is loaded.
+    ///
+    /// Asking the file system for the size first is what keeps the limit meaningful: reading
+    /// the bytes and then measuring them would already have spent the memory the cap exists
+    /// to protect.
+    ///
+    /// A path whose size cannot be read is left alone — the caller's own `contents` check
+    /// reports a missing file or a directory in its own words.
+    ///
+    /// - Throws: ``FileSystemToolKitError/fileTooLarge(path:size:limit:)``.
+    private func checkReadableSize(of path: String) throws {
+        guard let attributes = try? fileManager.attributesOfItem(atPath: path),
+              let size = attributes[.size] as? Int else {
+            return
         }
 
-        let resolvedPath = URL(fileURLWithPath: absolutePath).standardizedFileURL.path
-
-        // No list means no boundary.
-        guard let allowedPaths else { return resolvedPath }
-
-        let isAllowed = allowedPaths.contains { allowedPath in
-            resolvedPath.hasPrefix(allowedPath)
+        guard size <= maximumReadBytes else {
+            throw FileSystemToolKitError.fileTooLarge(
+                path: path,
+                size: size,
+                limit: maximumReadBytes
+            )
         }
-
-        guard isAllowed else {
-            throw FileSystemToolKitError.accessDenied(path: resolvedPath, allowedPaths: allowedPaths)
-        }
-
-        return resolvedPath
     }
 
     // MARK: - Read Tracking
@@ -165,9 +180,10 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
 
     /// The `read_file` tool: return a file's whole contents and mark it readable for editing.
     ///
-    /// The whole file is loaded into memory and there is no size cap, so a large file goes
-    /// straight into the model's context. Only UTF-8 decodes; anything else fails rather
-    /// than returning bytes.
+    /// The whole file is loaded into memory and goes straight into the model's context, so it
+    /// is refused above ``maximumReadBytes`` rather than truncated — a model given the first
+    /// half of a file cannot tell it is missing the rest. Only UTF-8 decodes; anything else
+    /// fails rather than returning bytes.
     private var readFileTool: BuiltInTool {
         BuiltInTool(
             name: "read_file",
@@ -186,6 +202,8 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
         ) { [self] data in
             let input = try JSONDecoder().decode(ReadFileInput.self, from: data)
             let validPath = try validatePath(input.path)
+
+            try self.checkReadableSize(of: validPath)
 
             guard let content = fileManager.contents(atPath: validPath) else {
                 throw FileSystemToolKitError.fileNotFound(path: validPath)
@@ -230,6 +248,7 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
             for path in input.paths {
                 do {
                     let validPath = try validatePath(path)
+                    try self.checkReadableSize(of: validPath)
                     guard let content = fileManager.contents(atPath: validPath),
                           let text = String(data: content, encoding: .utf8) else {
                         results.append(FileReadResult(path: path, content: nil, error: "Could not read file"))
@@ -715,8 +734,9 @@ public final class FileSystemToolKit: ToolKit, @unchecked Sendable {
 
     /// The `get_file_info` tool: size, timestamps, POSIX permissions and readability.
     ///
-    /// Lets the model check a file's size before reading it, since `read_file` has no cap.
-    /// Fails on a path that does not exist rather than reporting absence.
+    /// Lets the model check a file's size before reading it, and so find out whether
+    /// `read_file` will accept it. Fails on a path that does not exist rather than reporting
+    /// absence.
     private var getFileInfoTool: BuiltInTool {
         BuiltInTool(
             name: "get_file_info",
@@ -960,6 +980,7 @@ private struct FileInfo: Codable {
 public enum FileSystemToolKitError: Error, LocalizedError {
     case accessDenied(path: String, allowedPaths: [String])
     case fileNotFound(path: String)
+    case fileTooLarge(path: String, size: Int, limit: Int)
     case encodingError(path: String)
     case operationFailed(message: String)
     case readRequired(path: String, tool: String)
@@ -970,6 +991,8 @@ public enum FileSystemToolKitError: Error, LocalizedError {
             return "Access denied to '\(path)'. Allowed paths: \(allowedPaths.joined(separator: ", "))"
         case .fileNotFound(let path):
             return "File not found: \(path)"
+        case .fileTooLarge(let path, let size, let limit):
+            return "File '\(path)' is \(size) bytes, over the \(limit)-byte read limit. Use grep_files to search it, or read a smaller file."
         case .encodingError(let path):
             return "Could not read file as UTF-8: \(path)"
         case .operationFailed(let message):

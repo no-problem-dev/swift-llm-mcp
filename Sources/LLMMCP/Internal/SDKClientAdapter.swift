@@ -19,6 +19,18 @@ internal actor SDKClientAdapter {
 
     // MARK: - Initialization
 
+    /// Prepares an adapter over a transport that is already built. Nothing is sent until first use.
+    ///
+    /// The other initializers each build a transport and hand it here, so every adapter is
+    /// connected the same way whatever it is talking to.
+    init(transport: any Transport) {
+        self.transport = transport
+        self.client = MCP.Client(
+            name: "swift-llm-agent",
+            version: "1.0.0"
+        )
+    }
+
     #if os(macOS)
     /// Prepares a subprocess-backed adapter. The process starts on first use, not here.
     ///
@@ -31,15 +43,11 @@ internal actor SDKClientAdapter {
         arguments: [String] = [],
         environment: [String: String] = [:]
     ) {
-        self.transport = ProcessTransport(
+        self.init(transport: ProcessTransport(
             command: command,
             arguments: arguments,
             environment: environment
-        )
-        self.client = MCP.Client(
-            name: "swift-llm-agent",
-            version: "1.0.0"
-        )
+        ))
     }
     #endif
 
@@ -49,23 +57,24 @@ internal actor SDKClientAdapter {
     ///   - url: Endpoint of the MCP server.
     ///   - authorization: Applied by a request hook, so it covers every request the transport makes.
     init(url: URL, authorization: MCPAuthorization = .none) {
+        let transport: any Transport
         switch authorization {
         case .none:
-            self.transport = HTTPClientTransport(endpoint: url)
+            transport = HTTPClientTransport(endpoint: url)
         case .bearer(let token):
-            self.transport = HTTPClientTransport(endpoint: url) { request in
+            transport = HTTPClientTransport(endpoint: url) { request in
                 var modifiedRequest = request
                 modifiedRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 return modifiedRequest
             }
         case .header(let name, let value):
-            self.transport = HTTPClientTransport(endpoint: url) { request in
+            transport = HTTPClientTransport(endpoint: url) { request in
                 var modifiedRequest = request
                 modifiedRequest.setValue(value, forHTTPHeaderField: name)
                 return modifiedRequest
             }
         case .headers(let headers):
-            self.transport = HTTPClientTransport(endpoint: url) { request in
+            transport = HTTPClientTransport(endpoint: url) { request in
                 var modifiedRequest = request
                 for (name, value) in headers {
                     modifiedRequest.setValue(value, forHTTPHeaderField: name)
@@ -74,10 +83,7 @@ internal actor SDKClientAdapter {
             }
         }
 
-        self.client = MCP.Client(
-            name: "swift-llm-agent",
-            version: "1.0.0"
-        )
+        self.init(transport: transport)
     }
 
     // MARK: - Connection Management
@@ -102,6 +108,12 @@ internal actor SDKClientAdapter {
     ///
     /// The loop has no page limit and no cycle detection, so a server that keeps returning
     /// a cursor never terminates.
+    ///
+    /// - Throws: ``MCPError/toolSchemaConversionFailed(toolName:underlying:)`` if any tool's
+    ///   input schema cannot be converted. The whole listing fails rather than part of it
+    ///   arriving: a tool whose parameters are unknown cannot be offered to a model, and
+    ///   dropping it quietly would leave the caller unable to tell a short list from a
+    ///   complete one.
     func listTools() async throws -> [MCPTool] {
         try await ensureConnected()
 
@@ -114,8 +126,8 @@ internal actor SDKClientAdapter {
             cursor = result.nextCursor
         } while cursor != nil
 
-        return allTools.map { sdkTool in
-            convertToMCPTool(sdkTool)
+        return try allTools.map { sdkTool in
+            try convertToMCPTool(sdkTool)
         }
     }
 
@@ -147,8 +159,8 @@ internal actor SDKClientAdapter {
     ///
     /// The closure holds the adapter weakly, so a tool outlives its adapter only as a value:
     /// calling it after the adapter is released throws "Adapter was deallocated".
-    private func convertToMCPTool(_ sdkTool: MCP.Tool) -> MCPTool {
-        let inputSchema = convertValueToJSONSchema(sdkTool.inputSchema)
+    private func convertToMCPTool(_ sdkTool: MCP.Tool) throws -> MCPTool {
+        let inputSchema = try convertValueToJSONSchema(sdkTool.inputSchema, toolName: sdkTool.name)
 
         // Missing hints read as "writable, non-destructive", so an unannotated tool
         // survives the .safe preset and is excluded by .readOnly.
@@ -179,12 +191,17 @@ internal actor SDKClientAdapter {
 
     /// Converts an SDK schema `Value` into a ``JSONSchema`` by round-tripping it through structured-data.
     ///
-    /// A schema that does not decode becomes an empty object, so the model is told the tool
-    /// takes no arguments. The decoding error is discarded, which makes that look like a
-    /// tool with no parameters rather than a conversion failure.
-    private func convertValueToJSONSchema(_ value: MCP.Value) -> JSONSchema {
-        (try? StructuredValue.encoded(value).decode(JSONSchema.self))
-            ?? .object(properties: [:], required: [])
+    /// A schema that does not decode is a failure, not an empty object. The two are
+    /// indistinguishable to a model — both read as "this tool takes no arguments" — and the
+    /// second is a lie that makes it call the tool wrongly, so the error is raised instead.
+    ///
+    /// - Throws: ``MCPError/toolSchemaConversionFailed(toolName:underlying:)``.
+    private func convertValueToJSONSchema(_ value: MCP.Value, toolName: String) throws -> JSONSchema {
+        do {
+            return try StructuredValue.encoded(value).decode(JSONSchema.self)
+        } catch {
+            throw MCPError.toolSchemaConversionFailed(toolName: toolName, underlying: error)
+        }
     }
 
     /// Parses argument data into an SDK value dictionary.

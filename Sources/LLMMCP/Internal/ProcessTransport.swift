@@ -3,6 +3,27 @@ import Foundation
 import Logging
 import MCP
 
+// MARK: - ProcessTransportError
+
+/// Failures ``ProcessTransport`` raises on its own account, rather than passing on from the
+/// child process or the pipes.
+internal enum ProcessTransportError: Error, LocalizedError {
+    /// The server wrote more than the limit without a newline, so no message could be framed.
+    case unterminatedMessageTooLarge(bytes: Int, limit: Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .unterminatedMessageTooLarge(let bytes, let limit):
+            return """
+                The MCP server sent \(bytes) bytes with no newline, past the \(limit)-byte limit \
+                for a single message. The connection was closed rather than framing a partial message.
+                """
+        }
+    }
+}
+
+// MARK: - ProcessTransport
+
 /// Launches an MCP server as a child process and speaks newline-delimited JSON-RPC over its pipes.
 ///
 /// The SDK's own `StdioTransport` is the server side of this arrangement — it talks over the
@@ -33,6 +54,9 @@ internal actor ProcessTransport: Transport {
     private let arguments: [String]
     private let environment: [String: String]
 
+    /// How many bytes of an unfinished message the read loop will hold before giving up on it.
+    private let maximumPendingBytes: Int
+
     private var state: ConnectionState = .disconnected
     private let messageStream: AsyncThrowingStream<Data, Swift.Error>
     private let messageContinuation: AsyncThrowingStream<Data, Swift.Error>.Continuation
@@ -47,15 +71,20 @@ internal actor ProcessTransport: Transport {
     ///   - environment: Variables layered over the parent process environment.
     ///   - logger: Where the child's stderr goes. Defaults to a no-op handler, which
     ///     discards every diagnostic the server writes.
+    ///   - maximumPendingBytes: How much of an unterminated message to hold before failing the
+    ///     stream. The default leaves room for a large tool result while still bounding a
+    ///     server that never emits a newline.
     init(
         command: String,
         arguments: [String] = [],
         environment: [String: String] = [:],
-        logger: Logger? = nil
+        logger: Logger? = nil,
+        maximumPendingBytes: Int = 16 * 1024 * 1024
     ) {
         self.command = command
         self.arguments = arguments
         self.environment = environment
+        self.maximumPendingBytes = maximumPendingBytes
         self.logger = logger ?? Logger(
             label: "mcp.transport.process",
             factory: { _ in SwiftLogNoOpLogHandler() }
@@ -206,8 +235,11 @@ internal actor ProcessTransport: Transport {
 
     /// Reads the child's stdout and yields one message per newline until cancelled or EOF.
     ///
-    /// The pending buffer is unbounded: a server that writes without ever emitting a newline
-    /// grows it until memory runs out. Cancellation is only observed between reads, so a
+    /// What has arrived without a terminating newline is held in the pending buffer, capped at
+    /// ``maximumPendingBytes``. Past that the stream fails: the frame is not truncated to fit,
+    /// because half a JSON-RPC message parsed as a whole one is a wrong answer, and it is not
+    /// held either, because a server that never writes a newline would otherwise grow this
+    /// until the host runs out of memory. Cancellation is only observed between reads, so a
     /// child that goes quiet leaves this parked in a read.
     private func readLoop() async {
         guard case .connected(_, _, let stdout, _, _, _) = state else { return }
@@ -244,6 +276,21 @@ internal actor ProcessTransport: Transport {
                         messageContinuation.yield(Data(messageData))
                     }
                 }
+
+                // Checked after draining, so the cap bounds one unfinished message rather
+                // than the total traffic.
+                if pendingData.count > maximumPendingBytes {
+                    let error = ProcessTransportError.unterminatedMessageTooLarge(
+                        bytes: pendingData.count,
+                        limit: maximumPendingBytes
+                    )
+                    logger.error("Pending message exceeded the limit", metadata: [
+                        "bytes": "\(pendingData.count)",
+                        "limit": "\(maximumPendingBytes)"
+                    ])
+                    messageContinuation.finish(throwing: MCP.MCPError.transportError(error))
+                    return
+                }
             } catch {
                 if !Task.isCancelled {
                     logger.error("Read error occurred", metadata: ["error": "\(error)"])
@@ -257,16 +304,23 @@ internal actor ProcessTransport: Transport {
 
     /// Drains the child's stderr into the logger until cancelled or EOF.
     ///
-    /// Draining is what matters: an undrained stderr pipe fills and blocks the child. The
-    /// read is synchronous, so this holds a thread and only notices cancellation once a
-    /// read returns.
+    /// Draining is what matters: an undrained stderr pipe fills and blocks the child. Like
+    /// ``readLoop()``, the blocking read runs off the cooperative pool and comes back through
+    /// a continuation — reading it inline would hold this actor for as long as the child stays
+    /// quiet, which is the whole session, and the read loop would never get to run.
+    /// Cancellation is only observed between reads.
     private func monitorStderr() async {
         guard case .connected(_, _, _, let stderr, _, _) = state else { return }
 
         let fileHandle = stderr.fileHandleForReading
 
         while !Task.isCancelled {
-            let data = fileHandle.availableData
+            let data = await withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
+                DispatchQueue.global().async {
+                    continuation.resume(returning: fileHandle.availableData)
+                }
+            }
+
             if data.isEmpty { break }
 
             if let message = String(data: data, encoding: .utf8) {

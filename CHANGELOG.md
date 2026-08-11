@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **The path sandbox was a string prefix.** Allowing `/data` therefore also allowed `/database`,
+  and `standardizedFileURL` collapses `..` without resolving symlinks, so a link inside an allowed
+  directory reached outside it. This is the boundary for a toolkit an LLM drives. One
+  `PathBoundary` now serves both toolkits: containment is on component boundaries, and the
+  canonical path is walked down from `/` one component at a time so `..` resolves *after* symlinks
+  — a purely lexical collapse would let `link/../secret` name a sibling of the link rather than of
+  its target. Allowed roots are canonicalized too, so a root reached through `/tmp` still matches.
+- **`ios.fetch` had no host allowlist**, so a model-authored script could reach any host, including
+  one on localhost. Matching is on DNS labels: `example.com` admits `api.example.com` and refuses
+  both `notexample.com` and `example.com.evil.net`.
+- **A tool schema that failed to decode became an empty object**, so the model was told the tool
+  takes no arguments and called it wrongly. `listTools()` now fails whole rather than partially — a
+  short list is otherwise indistinguishable from a complete one.
+- `pendingData` had no bound, so a server writing without a newline could take the host to OOM.
+  `read_file` had no size cap at all; a refused read also used to mark the path as read-tracked,
+  which let a subsequent write through.
+
+
 ## [0.2.0] - 2026-08-11
 
 ### Changed

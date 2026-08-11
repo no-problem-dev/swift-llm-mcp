@@ -19,14 +19,17 @@ import LLMTool
 /// between calls — a script cannot leave state for the next one.
 ///
 /// The JavaScript environment is bare: no `require`, no timers, no DOM, and no `async`.
-/// What it does have is `console` and the `ios` object supplied by ``ScriptBridge``, whose
-/// file access is bounded by the bridge's allowed paths. Give the bridge a narrow list; the
-/// default bridge has no path restriction at all.
+/// What it does have is `console` and the `ios` object supplied by ``ScriptBridge``, whose file
+/// access is bounded by the bridge's allowed paths and whose network access is bounded by its
+/// allowed hosts. Give the bridge both lists; the default bridge has neither restriction.
 ///
 /// ```swift
 /// let tools = ToolSet {
 ///     ScriptToolKit(
-///         bridge: ScriptBridge(allowedPaths: ["/Users/user/Documents"]),
+///         bridge: ScriptBridge(
+///             allowedPaths: ["/Users/user/Documents"],
+///             allowedHosts: ["api.example.com"]
+///         ),
 ///         timeout: 30
 ///     )
 /// }
@@ -45,8 +48,8 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
     /// Creates the kit.
     ///
     /// - Parameters:
-    ///   - bridge: The `ios` API exposed to scripts. The default permits file access
-    ///     anywhere this process can reach.
+    ///   - bridge: The `ios` API exposed to scripts. The default permits file access anywhere
+    ///     this process can reach, and network access to any host.
     ///   - timeout: Seconds before the tool reports a timeout. It is a deadline on the
     ///     reply, not preemption of the script — see the `run_script` tool.
     public init(
@@ -230,11 +233,15 @@ public final class ScriptToolKit: ToolKit, @unchecked Sendable {
 /// JavaScriptCore blocks cannot throw into the script. A script therefore cannot tell a
 /// failure from file content that happens to start with `[error]`.
 ///
-/// `allowedPaths` bounds the file members only. `ios.fetch` has no equivalent restriction
-/// and will reach any URL.
+/// `allowedPaths` bounds the file members and `allowedHosts` bounds `ios.fetch`. Both default
+/// to `nil`, which is no boundary at all: an unbounded bridge lets a script reach any host this
+/// process can, including link-local metadata endpoints and services on localhost.
 public final class ScriptBridge: @unchecked Sendable {
-    /// Directories scripts may read and write, already tilde-expanded. `nil` allows everything.
-    private let allowedPaths: [String]?
+    /// Directories scripts may read and write. An empty boundary allows everything.
+    private let boundary: PathBoundary
+
+    /// Hosts `ios.fetch` may reach. An empty boundary allows every host.
+    private let hostBoundary: HostBoundary
 
     /// Where relative paths in the file members resolve. Also the value of `ios.cwd`.
     private let workingDirectory: String
@@ -251,19 +258,23 @@ public final class ScriptBridge: @unchecked Sendable {
     ///   - allowedPaths: Directories scripts may touch. A leading `~` is expanded. `nil`
     ///     imposes no boundary, which is reasonable on iOS where the sandbox is the
     ///     boundary, and is not on macOS.
+    ///   - allowedHosts: Hosts `ios.fetch` may reach. A subdomain of a listed host is allowed;
+    ///     a name that merely ends the same way is not. `nil` imposes no boundary, which lets
+    ///     a script reach anything this process can — including link-local metadata endpoints
+    ///     and services listening on localhost.
     ///   - workingDirectory: Where relative paths resolve. Defaults to the app's Documents directory.
-    ///   - httpTimeout: Per-request timeout for `ios.fetch`, in seconds. It is the only
-    ///     thing bounding that call, which blocks the calling thread while it runs.
+    ///   - httpTimeout: Per-request timeout for `ios.fetch`, in seconds. It is what bounds how
+    ///     long that call blocks the calling thread.
     ///   - transport: Substitute one in tests to avoid real network calls.
     public init(
         allowedPaths: [String]? = nil,
+        allowedHosts: [String]? = nil,
         workingDirectory: String? = nil,
         httpTimeout: TimeInterval = 15,
         transport: (any HTTPTransport)? = nil
     ) {
-        self.allowedPaths = allowedPaths?.map { path in
-            NSString(string: path).expandingTildeInPath
-        }
+        self.boundary = PathBoundary(allowedPaths: allowedPaths)
+        self.hostBoundary = HostBoundary(allowedHosts: allowedHosts)
         self.workingDirectory = workingDirectory
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path
             ?? FileManager.default.currentDirectoryPath
@@ -280,37 +291,19 @@ public final class ScriptBridge: @unchecked Sendable {
         self.httpTimeout = httpTimeout
     }
 
-    /// Resolves a script's path and rejects it if it falls outside ``allowedPaths``.
+    /// Resolves a script's path and rejects it if it falls outside the allowed paths.
     ///
-    /// Anything not starting with `/` resolves against ``workingDirectory``, and `..`
-    /// segments are collapsed first. Like ``FileSystemToolKit``, the comparison is a string
-    /// prefix rather than a path-component one, and symlinks are not resolved.
+    /// Anything not starting with `/` resolves against ``workingDirectory``. The boundary is
+    /// the same ``PathBoundary`` ``FileSystemToolKit`` uses, so both kits follow symlinks to
+    /// where they really point and both judge containment by path component.
     ///
     /// - Throws: ``ScriptToolKitError/accessDenied(path:)``.
     private func validatePath(_ path: String) throws -> String {
-        let expandedPath = NSString(string: path).expandingTildeInPath
-
-        let absolutePath: String
-        if expandedPath.hasPrefix("/") {
-            absolutePath = expandedPath
-        } else {
-            absolutePath = (workingDirectory as NSString).appendingPathComponent(expandedPath)
+        do {
+            return try boundary.resolve(path, workingDirectory: workingDirectory)
+        } catch {
+            throw ScriptToolKitError.accessDenied(path: error.path)
         }
-
-        let resolvedPath = URL(fileURLWithPath: absolutePath).standardizedFileURL.path
-
-        // No list means no boundary.
-        guard let allowedPaths else { return resolvedPath }
-
-        let isAllowed = allowedPaths.contains { allowedPath in
-            resolvedPath.hasPrefix(allowedPath)
-        }
-
-        guard isAllowed else {
-            throw ScriptToolKitError.accessDenied(path: resolvedPath)
-        }
-
-        return resolvedPath
     }
 
     /// Installs the `ios` object into a context, routing its log output to `logBuffer`.
@@ -367,13 +360,20 @@ public final class ScriptBridge: @unchecked Sendable {
             }
         }
 
-        // ios.fetch(url) -> String. GET only, no headers, no domain restriction, and the
-        // whole body is returned as text. JavaScriptCore has no await, so the async call is
-        // made synchronous with a semaphore: this blocks the calling thread until the
-        // request finishes or the transport's own timeout fires.
+        // ios.fetch(url) -> String. GET only, no headers, and the whole body is returned as
+        // text. The host must pass the bridge's allowed hosts, and the scheme must be http or
+        // https. JavaScriptCore has no await, so the async call is made synchronous with a
+        // semaphore: this blocks the calling thread until the request finishes or the
+        // transport's own timeout fires.
         let fetch: @convention(block) (String) -> String = { [self] urlString in
             guard let url = URL(string: urlString) else {
                 return "[error] Invalid URL: \(urlString)"
+            }
+
+            // Checked before anything is sent: a refusal that still made the request would
+            // have already read whatever it was pointed at.
+            if let violation = hostBoundary.violation(for: url) {
+                return "[error] \(ScriptToolKitError(violation).localizedDescription)"
             }
 
             // The semaphore is what makes this exclusive, so the unchecked capture is sound.
@@ -470,6 +470,8 @@ private struct RunScriptInput: Codable {
 public enum ScriptToolKitError: Error, LocalizedError {
     case timeout(seconds: TimeInterval)
     case accessDenied(path: String)
+    case hostNotAllowed(host: String, allowedHosts: [String])
+    case unsupportedScheme(scheme: String)
     case executionFailed(message: String)
 
     public var errorDescription: String? {
@@ -478,8 +480,24 @@ public enum ScriptToolKitError: Error, LocalizedError {
             return "Script execution timed out after \(Int(seconds)) seconds"
         case .accessDenied(let path):
             return "Access denied to path: \(path)"
+        case .hostNotAllowed(let host, let allowedHosts):
+            return "Access denied to host '\(host)'. Allowed hosts: \(allowedHosts.joined(separator: ", "))"
+        case .unsupportedScheme(let scheme):
+            return "Access denied to scheme '\(scheme)'. ios.fetch supports http and https only."
         case .executionFailed(let message):
             return "Script execution failed: \(message)"
+        }
+    }
+}
+
+extension ScriptToolKitError {
+    /// Restates a boundary refusal as the error a script's caller reads.
+    init(_ violation: URLOutsideBoundary) {
+        switch violation.reason {
+        case .unsupportedScheme(let scheme):
+            self = .unsupportedScheme(scheme: scheme)
+        case .hostNotAllowed(let host):
+            self = .hostNotAllowed(host: host, allowedHosts: violation.allowedHosts ?? [])
         }
     }
 }
