@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-11
+
 ### Fixed
 
 - **The path sandbox was a string prefix.** Allowing `/data` therefore also allowed `/database`,
