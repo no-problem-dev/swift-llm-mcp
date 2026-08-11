@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-11
+
 ### Changed
 
 - **BREAKING** — raised the swift-http-transport pin to 2.0.0 and the swift-llm-client pin to
