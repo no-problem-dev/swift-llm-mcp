@@ -1,5 +1,5 @@
 {
-  "originHash" : "f6e8e37e6840275ed6d3a486d0a05ee7562e4262d3eb6d705df09738ad1186fc",
+  "originHash" : "5672ca21440d188e0133a61aaf5047ed32691cade355ec0a3028d2184ece4348",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/no-problem-dev/swift-llm-client.git",
       "state" : {
-        "revision" : "33df7b6b890e13bc690a7662e24c55d4bc94ce69",
-        "version" : "3.13.0"
+        "revision" : "3640d5ee2ad8d5f903fc52656667dad60755a3c7",
+        "version" : "4.0.0"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/no-problem-dev/swift-structured-data.git",
       "state" : {
-        "revision" : "8bfbfe1091610e300409c2dad0506e498d04d014",
-        "version" : "2.0.0"
+        "revision" : "0f82306bae15be025540b873223c2baeed03d1ac",
+        "version" : "3.0.0"
       }
     },
     {

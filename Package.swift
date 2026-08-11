@@ -16,11 +16,11 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.0"),
-        .package(url: "https://github.com/no-problem-dev/swift-llm-client.git", from: "3.4.1"),
+        .package(url: "https://github.com/no-problem-dev/swift-llm-client.git", from: "4.0.0"),
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.12.1"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.6.0"),
         .package(url: "https://github.com/no-problem-dev/swift-http-transport.git", from: "1.1.0"),
-        .package(url: "https://github.com/no-problem-dev/swift-structured-data.git", from: "2.0.0"),
+        .package(url: "https://github.com/no-problem-dev/swift-structured-data.git", from: "3.0.0"),
     ],
     targets: [
         // 純粋な Web フェッチ/抽出エンジン（MCP・LLMTool 非依存）
