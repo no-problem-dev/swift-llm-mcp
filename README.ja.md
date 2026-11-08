@@ -72,11 +72,11 @@ print(document.wasTruncated)  // maxContentSize を超えたら true
 
 ## ドキュメント
 
-[**LLMMCP**](https://no-problem-dev.github.io/swift-llm-mcp/documentation/llmmcp/) —
+[**LLMMCP**](Sources/LLMMCP/Documentation.docc) —
 MCP サーバーへの接続、同梱ツールキット、自作の書き方。
-[Getting Started](https://no-problem-dev.github.io/swift-llm-mcp/documentation/llmmcp/gettingstarted/) を含む。
+[Getting Started](Sources/LLMMCP/Documentation.docc/GettingStarted.md) を含む。
 
-[**WebFetchKit**](https://no-problem-dev.github.io/swift-llm-mcp/documentation/webfetchkit/) —
+[**WebFetchKit**](Sources/WebFetchKit/Documentation.docc) —
 取得エンジン、HTML → Markdown 変換、長いページの切り出し。
 
 ## インストール
