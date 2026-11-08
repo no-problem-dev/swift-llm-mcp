@@ -74,11 +74,11 @@ print(document.wasTruncated)  // true when the body exceeded maxContentSize
 
 ## Documentation
 
-[**LLMMCP**](https://no-problem-dev.github.io/swift-llm-mcp/documentation/llmmcp/) —
+[**LLMMCP**](Sources/LLMMCP/Documentation.docc) —
 connecting MCP servers, the built-in tool kits, and writing your own, including
-[Getting Started](https://no-problem-dev.github.io/swift-llm-mcp/documentation/llmmcp/gettingstarted/).
+[Getting Started](Sources/LLMMCP/Documentation.docc/GettingStarted.md).
 
-[**WebFetchKit**](https://no-problem-dev.github.io/swift-llm-mcp/documentation/webfetchkit/) —
+[**WebFetchKit**](Sources/WebFetchKit/Documentation.docc) —
 the fetch engine, HTML-to-Markdown conversion, and slicing long pages.
 
 ## Installation
